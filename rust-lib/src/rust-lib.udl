@@ -1,0 +1,5 @@
+namespace rust_lib {
+    void fetch_inbox_top([ByRef]string domain, u16 port, [ByRef]string username, [ByRef]string password);
+
+    void send_plain_text_email([ByRef]string from, [ByRef]string reply_to, [ByRef]string to, [ByRef]string subject, [ByRef]string body, [ByRef]string smtp_server, [ByRef]string smtp_username, [ByRef]string smtp_password);
+};
