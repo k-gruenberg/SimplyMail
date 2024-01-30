@@ -23,7 +23,7 @@ To add this library to your Xcode project, go to "Package Dependencies", click t
 5. run `cargo install uniffi-bindgen-cs --git https://github.com/NordSecurity/uniffi-bindgen-cs --tag v0.7.0+v0.25.0`
 6. run `./build.sh`
 
-## Restrictions
+## Limitations
 
 The only supported platforms are iOS, the iOS simulator and macOS, corresponding to the collowing three `cargo` targets:
 * `aarch64-apple-darwin`
