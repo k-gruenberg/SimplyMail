@@ -23,7 +23,7 @@ To add this library to your Xcode project, go to "Package Dependencies", click t
 ## Building the `.xcframework` yourself
 
 1. run `rustup update`
-2. run `aarch64-apple-darwin` if necessary
+2. run `rustup target add aarch64-apple-darwin` if necessary
 3. run `rustup target add aarch64-apple-ios`
 4. run `rustup target add aarch64-apple-ios-sim`
 5. run `cargo install uniffi-bindgen-cs --git https://github.com/NordSecurity/uniffi-bindgen-cs --tag v0.7.0+v0.25.0`
