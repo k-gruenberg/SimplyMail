@@ -14,6 +14,12 @@ I did nothing more than to combine existing libraries and tutorials, these are:
 
 To add this library to your Xcode project, go to "Package Dependencies", click the "+" button, enter the URL of this repository (`https://github.com/k-gruenberg/SimplyMail`) and click "Add Package".
 
+## Type correspondences
+
+* `ImapError` corresponds to `imap::Error`
+* `SmtpError` corresponds to `lettre::transport::smtp::Error`
+* `SmtpResponse` corresponds to `lettre::transport::smtp::response::Response`
+
 ## Building the `.xcframework` yourself
 
 1. run `rustup update`
