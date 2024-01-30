@@ -1,6 +1,8 @@
 # SimplyMail (WIP)
 
-Simply a Swift library providing IMAP and SMTP client functionality for your iOS app, simply that. Works by simply wrapping existing Rust libraries. 
+Simply a Swift library providing IMAP and SMTP client functionality for your iOS app, simply that. Works by simply wrapping existing Rust libraries.
+
+First trying to find a working IMAP library for Swift (and not finding one) and then trying to import foreign language frameworks are all a real PITA. This Swift package is trying to save you!
 
 ## Acknowledgements
 
@@ -13,6 +15,21 @@ I did nothing more than to combine existing libraries and tutorials, these are:
 ## Usage
 
 To add this library to your Xcode project, go to "Package Dependencies", click the "+" button, enter the URL of this repository (`https://github.com/k-gruenberg/SimplyMail`) and click "Add Package".
+
+Here is some sample Swift code:
+```
+import SimplyMail
+
+do {
+    if let oldest_email = try simplyFetchInboxTop(domain: "imap.example.com", port: 993, username: "john.doe@example.com", password: "123456") {
+        print("Your oldest email is: \(oldest_email)")
+    } else {
+        print("Inbox is empty.")
+    }
+} catch let error {
+    print("IMAP error: \(error)")
+}
+```
 
 ## Type correspondences
 
