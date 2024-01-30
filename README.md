@@ -1,4 +1,4 @@
-# SimplyMail
+# SimplyMail (WIP)
 
 Simply a Swift library providing IMAP and SMTP client functionality for your iOS app, simply that. Works by simply wrapping existing Rust libraries. 
 
