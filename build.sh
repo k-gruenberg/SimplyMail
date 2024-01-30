@@ -26,3 +26,6 @@ xcodebuild -create-xcframework \
     -library "${TARGETDIR}/aarch64-apple-ios-sim/${RELDIR}/${STATIC_LIB_NAME}" \
     -headers "${NEW_HEADER_DIR}" \
     -output "${OUTDIR}/${NAME}_framework.xcframework"
+
+cp "bindings/rust_lib.swift" "../Sources/SimplyMail/rust_lib.swift"
+cp "bindings/rust_libFFI.h" "../Sources/SimplyMail/rust_libFFI.h"
