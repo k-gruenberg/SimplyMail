@@ -17,7 +17,7 @@ I did nothing more than to combine existing libraries and tutorials, these are:
 To add this library to your Xcode project, go to "Package Dependencies", click the "+" button, enter the URL of this repository (`https://github.com/k-gruenberg/SimplyMail`) and click "Add Package".
 
 Here is some sample Swift code:
-```
+```swift
 import SimplyMail
 
 do {
