@@ -29,3 +29,4 @@ xcodebuild -create-xcframework \
 
 cp "bindings/rust_lib.swift" "../Sources/SimplyMail/rust_lib.swift"
 cp "bindings/rust_libFFI.h" "../Sources/SimplyMail/rust_libFFI.h"
+cp "bindings/rust_libFFI.modulemap" "../Sources/SimplyMail/rust_libFFI.modulemap"
