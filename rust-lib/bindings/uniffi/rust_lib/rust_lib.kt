@@ -40,7 +40,7 @@ open class RustBuffer : Structure() {
 
     companion object {
         internal fun alloc(size: Int = 0) = rustCall() { status ->
-            _UniFFILib.INSTANCE.ffi_rust_lib_af25_rustbuffer_alloc(size, status).also {
+            _UniFFILib.INSTANCE.ffi_rust_lib_7fc3_rustbuffer_alloc(size, status).also {
                 if(it.data == null) {
                    throw RuntimeException("RustBuffer.alloc() returned null data pointer (size=${size})")
                }
@@ -48,7 +48,7 @@ open class RustBuffer : Structure() {
         }
 
         internal fun free(buf: RustBuffer.ByValue) = rustCall() { status ->
-            _UniFFILib.INSTANCE.ffi_rust_lib_af25_rustbuffer_free(buf, status)
+            _UniFFILib.INSTANCE.ffi_rust_lib_7fc3_rustbuffer_free(buf, status)
         }
     }
 
@@ -257,27 +257,31 @@ internal interface _UniFFILib : Library {
         }
     }
 
-    fun rust_lib_af25_fetch_inbox_top(`domain`: RustBuffer.ByValue,`port`: Short,`username`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,
-    _uniffi_out_err: RustCallStatus
-    ): Unit
-
-    fun rust_lib_af25_send_plain_text_email(`from`: RustBuffer.ByValue,`replyTo`: RustBuffer.ByValue,`to`: RustBuffer.ByValue,`subject`: RustBuffer.ByValue,`body`: RustBuffer.ByValue,`smtpServer`: RustBuffer.ByValue,`smtpUsername`: RustBuffer.ByValue,`smtpPassword`: RustBuffer.ByValue,
-    _uniffi_out_err: RustCallStatus
-    ): Unit
-
-    fun ffi_rust_lib_af25_rustbuffer_alloc(`size`: Int,
+    fun rust_lib_7fc3_simply_fetch_inbox_top(`domain`: RustBuffer.ByValue,`port`: Short,`username`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
-    fun ffi_rust_lib_af25_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,
+    fun rust_lib_7fc3_simply_send_plain_text_email(`smtpServer`: RustBuffer.ByValue,`smtpUsername`: RustBuffer.ByValue,`smtpPassword`: RustBuffer.ByValue,`headers`: RustBuffer.ByValue,`body`: RustBuffer.ByValue,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
-    fun ffi_rust_lib_af25_rustbuffer_free(`buf`: RustBuffer.ByValue,
+    fun rust_lib_7fc3_simply_send_html_email(`smtpServer`: RustBuffer.ByValue,`smtpUsername`: RustBuffer.ByValue,`smtpPassword`: RustBuffer.ByValue,`headers`: RustBuffer.ByValue,`plainTextBody`: RustBuffer.ByValue,`htmlBody`: RustBuffer.ByValue,
+    _uniffi_out_err: RustCallStatus
+    ): RustBuffer.ByValue
+
+    fun ffi_rust_lib_7fc3_rustbuffer_alloc(`size`: Int,
+    _uniffi_out_err: RustCallStatus
+    ): RustBuffer.ByValue
+
+    fun ffi_rust_lib_7fc3_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,
+    _uniffi_out_err: RustCallStatus
+    ): RustBuffer.ByValue
+
+    fun ffi_rust_lib_7fc3_rustbuffer_free(`buf`: RustBuffer.ByValue,
     _uniffi_out_err: RustCallStatus
     ): Unit
 
-    fun ffi_rust_lib_af25_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Int,
+    fun ffi_rust_lib_7fc3_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Int,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
@@ -286,6 +290,26 @@ internal interface _UniFFILib : Library {
 
 // Public interface members begin here.
 
+
+public object FfiConverterUByte: FfiConverter<UByte, Byte> {
+    override fun lift(value: Byte): UByte {
+        return value.toUByte()
+    }
+
+    override fun read(buf: ByteBuffer): UByte {
+        return lift(buf.get())
+    }
+
+    override fun lower(value: UByte): Byte {
+        return value.toByte()
+    }
+
+    override fun allocationSize(value: UByte) = 1
+
+    override fun write(value: UByte, buf: ByteBuffer) {
+        buf.put(value.toByte())
+    }
+}
 
 public object FfiConverterUShort: FfiConverter<UShort, Short> {
     override fun lift(value: Short): UShort {
@@ -353,18 +377,318 @@ public object FfiConverterString: FfiConverter<String, RustBuffer.ByValue> {
     }
 }
 
-fun `fetchInboxTop`(`domain`: String, `port`: UShort, `username`: String, `password`: String) =
+
+
+
+data class SmtpResponse (
+    var `severity`: UByte, 
+    var `category`: UByte, 
+    var `detail`: UByte, 
+    var `message`: String
+) {
     
-    rustCall() { _status ->
-    _UniFFILib.INSTANCE.rust_lib_af25_fetch_inbox_top(FfiConverterString.lower(`domain`), FfiConverterUShort.lower(`port`), FfiConverterString.lower(`username`), FfiConverterString.lower(`password`), _status)
+}
+
+public object FfiConverterTypeSmtpResponse: FfiConverterRustBuffer<SmtpResponse> {
+    override fun read(buf: ByteBuffer): SmtpResponse {
+        return SmtpResponse(
+            FfiConverterUByte.read(buf),
+            FfiConverterUByte.read(buf),
+            FfiConverterUByte.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: SmtpResponse) = (
+            FfiConverterUByte.allocationSize(value.`severity`) +
+            FfiConverterUByte.allocationSize(value.`category`) +
+            FfiConverterUByte.allocationSize(value.`detail`) +
+            FfiConverterString.allocationSize(value.`message`)
+    )
+
+    override fun write(value: SmtpResponse, buf: ByteBuffer) {
+            FfiConverterUByte.write(value.`severity`, buf)
+            FfiConverterUByte.write(value.`category`, buf)
+            FfiConverterUByte.write(value.`detail`, buf)
+            FfiConverterString.write(value.`message`, buf)
+    }
 }
 
 
-fun `sendPlainTextEmail`(`from`: String, `replyTo`: String, `to`: String, `subject`: String, `body`: String, `smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String) =
-    
-    rustCall() { _status ->
-    _UniFFILib.INSTANCE.rust_lib_af25_send_plain_text_email(FfiConverterString.lower(`from`), FfiConverterString.lower(`replyTo`), FfiConverterString.lower(`to`), FfiConverterString.lower(`subject`), FfiConverterString.lower(`body`), FfiConverterString.lower(`smtpServer`), FfiConverterString.lower(`smtpUsername`), FfiConverterString.lower(`smtpPassword`), _status)
+
+
+
+sealed class ImapException(message: String): Exception(message) {
+        // Each variant is a nested class
+        // Flat enums carries a string error message, so no special implementation is necessary.
+        class IoException(message: String) : ImapException(message)
+        class TlsHandshakeException(message: String) : ImapException(message)
+        class TlsException(message: String) : ImapException(message)
+        class BadResponse(message: String) : ImapException(message)
+        class NoResponse(message: String) : ImapException(message)
+        class ConnectionLost(message: String) : ImapException(message)
+        class ParseException(message: String) : ImapException(message)
+        class ValidateException(message: String) : ImapException(message)
+        class AppendException(message: String) : ImapException(message)
+        class Nonexhaustive(message: String) : ImapException(message)
+        
+
+    companion object ErrorHandler : CallStatusErrorHandler<ImapException> {
+        override fun lift(error_buf: RustBuffer.ByValue): ImapException = FfiConverterTypeImapError.lift(error_buf)
+    }
 }
+
+public object FfiConverterTypeImapError : FfiConverterRustBuffer<ImapException> {
+    override fun read(buf: ByteBuffer): ImapException {
+        
+            return when(buf.getInt()) {
+            1 -> ImapException.IoException(FfiConverterString.read(buf))
+            2 -> ImapException.TlsHandshakeException(FfiConverterString.read(buf))
+            3 -> ImapException.TlsException(FfiConverterString.read(buf))
+            4 -> ImapException.BadResponse(FfiConverterString.read(buf))
+            5 -> ImapException.NoResponse(FfiConverterString.read(buf))
+            6 -> ImapException.ConnectionLost(FfiConverterString.read(buf))
+            7 -> ImapException.ParseException(FfiConverterString.read(buf))
+            8 -> ImapException.ValidateException(FfiConverterString.read(buf))
+            9 -> ImapException.AppendException(FfiConverterString.read(buf))
+            10 -> ImapException.Nonexhaustive(FfiConverterString.read(buf))
+            else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
+        }
+        
+    }
+
+    override fun allocationSize(value: ImapException): Int {
+        return 4
+    }
+
+    override fun write(value: ImapException, buf: ByteBuffer) {
+        when(value) {
+            is ImapException.IoException -> {
+                buf.putInt(1)
+                Unit
+            }
+            is ImapException.TlsHandshakeException -> {
+                buf.putInt(2)
+                Unit
+            }
+            is ImapException.TlsException -> {
+                buf.putInt(3)
+                Unit
+            }
+            is ImapException.BadResponse -> {
+                buf.putInt(4)
+                Unit
+            }
+            is ImapException.NoResponse -> {
+                buf.putInt(5)
+                Unit
+            }
+            is ImapException.ConnectionLost -> {
+                buf.putInt(6)
+                Unit
+            }
+            is ImapException.ParseException -> {
+                buf.putInt(7)
+                Unit
+            }
+            is ImapException.ValidateException -> {
+                buf.putInt(8)
+                Unit
+            }
+            is ImapException.AppendException -> {
+                buf.putInt(9)
+                Unit
+            }
+            is ImapException.Nonexhaustive -> {
+                buf.putInt(10)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+
+}
+
+
+
+
+
+sealed class SmtpException(message: String): Exception(message) {
+        // Each variant is a nested class
+        // Flat enums carries a string error message, so no special implementation is necessary.
+        class TransientSmtpException(message: String) : SmtpException(message)
+        class PermanentSmtpException(message: String) : SmtpException(message)
+        class ResponseParseException(message: String) : SmtpException(message)
+        class InternalClientException(message: String) : SmtpException(message)
+        class ConnectionException(message: String) : SmtpException(message)
+        class NetworkException(message: String) : SmtpException(message)
+        class TlsException(message: String) : SmtpException(message)
+        class Timeout(message: String) : SmtpException(message)
+        class OtherException(message: String) : SmtpException(message)
+        
+
+    companion object ErrorHandler : CallStatusErrorHandler<SmtpException> {
+        override fun lift(error_buf: RustBuffer.ByValue): SmtpException = FfiConverterTypeSmtpError.lift(error_buf)
+    }
+}
+
+public object FfiConverterTypeSmtpError : FfiConverterRustBuffer<SmtpException> {
+    override fun read(buf: ByteBuffer): SmtpException {
+        
+            return when(buf.getInt()) {
+            1 -> SmtpException.TransientSmtpException(FfiConverterString.read(buf))
+            2 -> SmtpException.PermanentSmtpException(FfiConverterString.read(buf))
+            3 -> SmtpException.ResponseParseException(FfiConverterString.read(buf))
+            4 -> SmtpException.InternalClientException(FfiConverterString.read(buf))
+            5 -> SmtpException.ConnectionException(FfiConverterString.read(buf))
+            6 -> SmtpException.NetworkException(FfiConverterString.read(buf))
+            7 -> SmtpException.TlsException(FfiConverterString.read(buf))
+            8 -> SmtpException.Timeout(FfiConverterString.read(buf))
+            9 -> SmtpException.OtherException(FfiConverterString.read(buf))
+            else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
+        }
+        
+    }
+
+    override fun allocationSize(value: SmtpException): Int {
+        return 4
+    }
+
+    override fun write(value: SmtpException, buf: ByteBuffer) {
+        when(value) {
+            is SmtpException.TransientSmtpException -> {
+                buf.putInt(1)
+                Unit
+            }
+            is SmtpException.PermanentSmtpException -> {
+                buf.putInt(2)
+                Unit
+            }
+            is SmtpException.ResponseParseException -> {
+                buf.putInt(3)
+                Unit
+            }
+            is SmtpException.InternalClientException -> {
+                buf.putInt(4)
+                Unit
+            }
+            is SmtpException.ConnectionException -> {
+                buf.putInt(5)
+                Unit
+            }
+            is SmtpException.NetworkException -> {
+                buf.putInt(6)
+                Unit
+            }
+            is SmtpException.TlsException -> {
+                buf.putInt(7)
+                Unit
+            }
+            is SmtpException.Timeout -> {
+                buf.putInt(8)
+                Unit
+            }
+            is SmtpException.OtherException -> {
+                buf.putInt(9)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+
+}
+
+
+
+
+public object FfiConverterOptionalString: FfiConverterRustBuffer<String?> {
+    override fun read(buf: ByteBuffer): String? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterString.read(buf)
+    }
+
+    override fun allocationSize(value: String?): Int {
+        if (value == null) {
+            return 1
+        } else {
+            return 1 + FfiConverterString.allocationSize(value)
+        }
+    }
+
+    override fun write(value: String?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterString.write(value, buf)
+        }
+    }
+}
+
+
+
+public object FfiConverterMapStringString: FfiConverterRustBuffer<Map<String, String>> {
+    override fun read(buf: ByteBuffer): Map<String, String> {
+        // TODO: Once Kotlin's `buildMap` API is stabilized we should use it here.
+        val items : MutableMap<String, String> = mutableMapOf()
+        val len = buf.getInt()
+        repeat(len) {
+            val k = FfiConverterString.read(buf)
+            val v = FfiConverterString.read(buf)
+            items[k] = v
+        }
+        return items
+    }
+
+    override fun allocationSize(value: Map<String, String>): Int {
+        val spaceForMapSize = 4
+        val spaceForChildren = value.map { (k, v) ->
+            FfiConverterString.allocationSize(k) +
+            FfiConverterString.allocationSize(v)
+        }.sum()
+        return spaceForMapSize + spaceForChildren
+    }
+
+    override fun write(value: Map<String, String>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        // The parens on `(k, v)` here ensure we're calling the right method,
+        // which is important for compatibility with older android devices.
+        // Ref https://blog.danlew.net/2017/03/16/kotlin-puzzler-whose-line-is-it-anyways/
+        value.forEach { (k, v) ->
+            FfiConverterString.write(k, buf)
+            FfiConverterString.write(v, buf)
+        }
+    }
+}
+@Throws(ImapException::class)
+
+fun `simplyFetchInboxTop`(`domain`: String, `port`: UShort, `username`: String, `password`: String): String? {
+    return FfiConverterOptionalString.lift(
+    rustCallWithError(ImapException) { _status ->
+    _UniFFILib.INSTANCE.rust_lib_7fc3_simply_fetch_inbox_top(FfiConverterString.lower(`domain`), FfiConverterUShort.lower(`port`), FfiConverterString.lower(`username`), FfiConverterString.lower(`password`), _status)
+})
+}
+
+
+@Throws(SmtpException::class)
+
+fun `simplySendPlainTextEmail`(`smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String, `headers`: Map<String, String>, `body`: String): SmtpResponse {
+    return FfiConverterTypeSmtpResponse.lift(
+    rustCallWithError(SmtpException) { _status ->
+    _UniFFILib.INSTANCE.rust_lib_7fc3_simply_send_plain_text_email(FfiConverterString.lower(`smtpServer`), FfiConverterString.lower(`smtpUsername`), FfiConverterString.lower(`smtpPassword`), FfiConverterMapStringString.lower(`headers`), FfiConverterString.lower(`body`), _status)
+})
+}
+
+
+@Throws(SmtpException::class)
+
+fun `simplySendHtmlEmail`(`smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String, `headers`: Map<String, String>, `plainTextBody`: String, `htmlBody`: String): SmtpResponse {
+    return FfiConverterTypeSmtpResponse.lift(
+    rustCallWithError(SmtpException) { _status ->
+    _UniFFILib.INSTANCE.rust_lib_7fc3_simply_send_html_email(FfiConverterString.lower(`smtpServer`), FfiConverterString.lower(`smtpUsername`), FfiConverterString.lower(`smtpPassword`), FfiConverterMapStringString.lower(`headers`), FfiConverterString.lower(`plainTextBody`), FfiConverterString.lower(`htmlBody`), _status)
+})
+}
+
 
 
 

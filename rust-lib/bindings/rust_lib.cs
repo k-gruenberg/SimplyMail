@@ -417,11 +417,15 @@ static class _UniFFILib {
         }
 
     [DllImport("rust_lib")]
-    public static extern void uniffi_rust_lib_fn_func_fetch_inbox_top(RustBuffer @domain,ushort @port,RustBuffer @username,RustBuffer @password,ref RustCallStatus _uniffi_out_err
+    public static extern RustBuffer uniffi_rust_lib_fn_func_simply_fetch_inbox_top(RustBuffer @domain,ushort @port,RustBuffer @username,RustBuffer @password,ref RustCallStatus _uniffi_out_err
     );
 
     [DllImport("rust_lib")]
-    public static extern void uniffi_rust_lib_fn_func_send_plain_text_email(RustBuffer @from,RustBuffer @replyTo,RustBuffer @to,RustBuffer @subject,RustBuffer @body,RustBuffer @smtpServer,RustBuffer @smtpUsername,RustBuffer @smtpPassword,ref RustCallStatus _uniffi_out_err
+    public static extern RustBuffer uniffi_rust_lib_fn_func_simply_send_html_email(RustBuffer @smtpServer,RustBuffer @smtpUsername,RustBuffer @smtpPassword,RustBuffer @headers,RustBuffer @plainTextBody,RustBuffer @htmlBody,ref RustCallStatus _uniffi_out_err
+    );
+
+    [DllImport("rust_lib")]
+    public static extern RustBuffer uniffi_rust_lib_fn_func_simply_send_plain_text_email(RustBuffer @smtpServer,RustBuffer @smtpUsername,RustBuffer @smtpPassword,RustBuffer @headers,RustBuffer @body,ref RustCallStatus _uniffi_out_err
     );
 
     [DllImport("rust_lib")]
@@ -653,11 +657,15 @@ static class _UniFFILib {
     );
 
     [DllImport("rust_lib")]
-    public static extern ushort uniffi_rust_lib_checksum_func_fetch_inbox_top(
+    public static extern ushort uniffi_rust_lib_checksum_func_simply_fetch_inbox_top(
     );
 
     [DllImport("rust_lib")]
-    public static extern ushort uniffi_rust_lib_checksum_func_send_plain_text_email(
+    public static extern ushort uniffi_rust_lib_checksum_func_simply_send_html_email(
+    );
+
+    [DllImport("rust_lib")]
+    public static extern ushort uniffi_rust_lib_checksum_func_simply_send_plain_text_email(
     );
 
     [DllImport("rust_lib")]
@@ -675,15 +683,21 @@ static class _UniFFILib {
 
     static void uniffiCheckApiChecksums() {
         {
-            var checksum = _UniFFILib.uniffi_rust_lib_checksum_func_fetch_inbox_top();
-            if (checksum != 48774) {
-                throw new UniffiContractChecksumException($"uniffi.rust_lib: uniffi bindings expected function `uniffi_rust_lib_checksum_func_fetch_inbox_top` checksum `48774`, library returned `{checksum}`");
+            var checksum = _UniFFILib.uniffi_rust_lib_checksum_func_simply_fetch_inbox_top();
+            if (checksum != 27917) {
+                throw new UniffiContractChecksumException($"uniffi.rust_lib: uniffi bindings expected function `uniffi_rust_lib_checksum_func_simply_fetch_inbox_top` checksum `27917`, library returned `{checksum}`");
             }
         }
         {
-            var checksum = _UniFFILib.uniffi_rust_lib_checksum_func_send_plain_text_email();
-            if (checksum != 25723) {
-                throw new UniffiContractChecksumException($"uniffi.rust_lib: uniffi bindings expected function `uniffi_rust_lib_checksum_func_send_plain_text_email` checksum `25723`, library returned `{checksum}`");
+            var checksum = _UniFFILib.uniffi_rust_lib_checksum_func_simply_send_html_email();
+            if (checksum != 64157) {
+                throw new UniffiContractChecksumException($"uniffi.rust_lib: uniffi bindings expected function `uniffi_rust_lib_checksum_func_simply_send_html_email` checksum `64157`, library returned `{checksum}`");
+            }
+        }
+        {
+            var checksum = _UniFFILib.uniffi_rust_lib_checksum_func_simply_send_plain_text_email();
+            if (checksum != 47146) {
+                throw new UniffiContractChecksumException($"uniffi.rust_lib: uniffi bindings expected function `uniffi_rust_lib_checksum_func_simply_send_plain_text_email` checksum `47146`, library returned `{checksum}`");
             }
         }
     }
@@ -693,6 +707,32 @@ static class _UniFFILib {
 
 #pragma warning disable 8625
 
+
+
+
+class FfiConverterUInt8: FfiConverter<byte, byte> {
+    public static FfiConverterUInt8 INSTANCE = new FfiConverterUInt8();
+
+    public override byte Lift(byte value) {
+        return value;
+    }
+
+    public override byte Read(BigEndianStream stream) {
+        return stream.ReadByte();
+    }
+
+    public override byte Lower(byte value) {
+        return value;
+    }
+
+    public override int AllocationSize(byte value) {
+        return 1;
+    }
+
+    public override void Write(byte value, BigEndianStream stream) {
+        stream.WriteByte(value);
+    }
+}
 
 
 
@@ -766,20 +806,368 @@ class FfiConverterString: FfiConverter<string, RustBuffer> {
         stream.WriteBytes(bytes);
     }
 }
-#pragma warning restore 8625
-public static class RustLibMethods {
-    public static void FetchInboxTop(String @domain, ushort @port, String @username, String @password) {
-        
-    _UniffiHelpers.RustCall( (ref RustCallStatus _status) =>
-    _UniFFILib.uniffi_rust_lib_fn_func_fetch_inbox_top(FfiConverterString.INSTANCE.Lower(@domain), FfiConverterUInt16.INSTANCE.Lower(@port), FfiConverterString.INSTANCE.Lower(@username), FfiConverterString.INSTANCE.Lower(@password), ref _status)
-);
+
+
+
+public record SmtpResponse (
+    byte @severity, 
+    byte @category, 
+    byte @detail, 
+    String @message
+) {
+}
+
+class FfiConverterTypeSmtpResponse: FfiConverterRustBuffer<SmtpResponse> {
+    public static FfiConverterTypeSmtpResponse INSTANCE = new FfiConverterTypeSmtpResponse();
+
+    public override SmtpResponse Read(BigEndianStream stream) {
+        return new SmtpResponse(
+            FfiConverterUInt8.INSTANCE.Read(stream),
+            FfiConverterUInt8.INSTANCE.Read(stream),
+            FfiConverterUInt8.INSTANCE.Read(stream),
+            FfiConverterString.INSTANCE.Read(stream)
+        );
     }
 
-    public static void SendPlainTextEmail(String @from, String @replyTo, String @to, String @subject, String @body, String @smtpServer, String @smtpUsername, String @smtpPassword) {
-        
-    _UniffiHelpers.RustCall( (ref RustCallStatus _status) =>
-    _UniFFILib.uniffi_rust_lib_fn_func_send_plain_text_email(FfiConverterString.INSTANCE.Lower(@from), FfiConverterString.INSTANCE.Lower(@replyTo), FfiConverterString.INSTANCE.Lower(@to), FfiConverterString.INSTANCE.Lower(@subject), FfiConverterString.INSTANCE.Lower(@body), FfiConverterString.INSTANCE.Lower(@smtpServer), FfiConverterString.INSTANCE.Lower(@smtpUsername), FfiConverterString.INSTANCE.Lower(@smtpPassword), ref _status)
-);
+    public override int AllocationSize(SmtpResponse value) {
+        return
+            FfiConverterUInt8.INSTANCE.AllocationSize(value.@severity) +
+            FfiConverterUInt8.INSTANCE.AllocationSize(value.@category) +
+            FfiConverterUInt8.INSTANCE.AllocationSize(value.@detail) +
+            FfiConverterString.INSTANCE.AllocationSize(value.@message);
+    }
+
+    public override void Write(SmtpResponse value, BigEndianStream stream) {
+            FfiConverterUInt8.INSTANCE.Write(value.@severity, stream);
+            FfiConverterUInt8.INSTANCE.Write(value.@category, stream);
+            FfiConverterUInt8.INSTANCE.Write(value.@detail, stream);
+            FfiConverterString.INSTANCE.Write(value.@message, stream);
+    }
+}
+
+
+
+
+
+public class ImapException: UniffiException {
+    ImapException(string message): base(message) {}
+
+    // Each variant is a nested class
+    // Flat enums carries a string error message, so no special implementation is necessary.
+    
+    public class IoException: ImapException {
+        public IoException(string message): base(message) {}
+    }
+    
+    public class TlsHandshakeException: ImapException {
+        public TlsHandshakeException(string message): base(message) {}
+    }
+    
+    public class TlsException: ImapException {
+        public TlsException(string message): base(message) {}
+    }
+    
+    public class BadResponse: ImapException {
+        public BadResponse(string message): base(message) {}
+    }
+    
+    public class NoResponse: ImapException {
+        public NoResponse(string message): base(message) {}
+    }
+    
+    public class ConnectionLost: ImapException {
+        public ConnectionLost(string message): base(message) {}
+    }
+    
+    public class ParseException: ImapException {
+        public ParseException(string message): base(message) {}
+    }
+    
+    public class ValidateException: ImapException {
+        public ValidateException(string message): base(message) {}
+    }
+    
+    public class AppendException: ImapException {
+        public AppendException(string message): base(message) {}
+    }
+    
+    public class Nonexhaustive: ImapException {
+        public Nonexhaustive(string message): base(message) {}
+    }
+    
+}
+
+class FfiConverterTypeImapException : FfiConverterRustBuffer<ImapException>, CallStatusErrorHandler<ImapException> {
+    public static FfiConverterTypeImapException INSTANCE = new FfiConverterTypeImapException();
+
+    public override ImapException Read(BigEndianStream stream) {
+        var value = stream.ReadInt();
+        switch (value) {
+            case 1: return new ImapException.IoException(FfiConverterString.INSTANCE.Read(stream));
+            case 2: return new ImapException.TlsHandshakeException(FfiConverterString.INSTANCE.Read(stream));
+            case 3: return new ImapException.TlsException(FfiConverterString.INSTANCE.Read(stream));
+            case 4: return new ImapException.BadResponse(FfiConverterString.INSTANCE.Read(stream));
+            case 5: return new ImapException.NoResponse(FfiConverterString.INSTANCE.Read(stream));
+            case 6: return new ImapException.ConnectionLost(FfiConverterString.INSTANCE.Read(stream));
+            case 7: return new ImapException.ParseException(FfiConverterString.INSTANCE.Read(stream));
+            case 8: return new ImapException.ValidateException(FfiConverterString.INSTANCE.Read(stream));
+            case 9: return new ImapException.AppendException(FfiConverterString.INSTANCE.Read(stream));
+            case 10: return new ImapException.Nonexhaustive(FfiConverterString.INSTANCE.Read(stream));
+            default:
+                throw new InternalException(String.Format("invalid error value '{0}' in FfiConverterTypeImapException.Read()", value));
+        }
+    }
+
+    public override int AllocationSize(ImapException value) {
+        return 4 + FfiConverterString.INSTANCE.AllocationSize(value.Message);
+    }
+
+    public override void Write(ImapException value, BigEndianStream stream) {
+        switch (value) {
+            case ImapException.IoException:
+                stream.WriteInt(1);
+                break;
+            case ImapException.TlsHandshakeException:
+                stream.WriteInt(2);
+                break;
+            case ImapException.TlsException:
+                stream.WriteInt(3);
+                break;
+            case ImapException.BadResponse:
+                stream.WriteInt(4);
+                break;
+            case ImapException.NoResponse:
+                stream.WriteInt(5);
+                break;
+            case ImapException.ConnectionLost:
+                stream.WriteInt(6);
+                break;
+            case ImapException.ParseException:
+                stream.WriteInt(7);
+                break;
+            case ImapException.ValidateException:
+                stream.WriteInt(8);
+                break;
+            case ImapException.AppendException:
+                stream.WriteInt(9);
+                break;
+            case ImapException.Nonexhaustive:
+                stream.WriteInt(10);
+                break;
+            default:
+                throw new InternalException(String.Format("invalid error value '{0}' in FfiConverterTypeImapException.Write()", value));
+        }
+    }
+}
+
+
+
+
+
+public class SmtpException: UniffiException {
+    SmtpException(string message): base(message) {}
+
+    // Each variant is a nested class
+    // Flat enums carries a string error message, so no special implementation is necessary.
+    
+    public class TransientSmtpException: SmtpException {
+        public TransientSmtpException(string message): base(message) {}
+    }
+    
+    public class PermanentSmtpException: SmtpException {
+        public PermanentSmtpException(string message): base(message) {}
+    }
+    
+    public class ResponseParseException: SmtpException {
+        public ResponseParseException(string message): base(message) {}
+    }
+    
+    public class InternalClientException: SmtpException {
+        public InternalClientException(string message): base(message) {}
+    }
+    
+    public class ConnectionException: SmtpException {
+        public ConnectionException(string message): base(message) {}
+    }
+    
+    public class NetworkException: SmtpException {
+        public NetworkException(string message): base(message) {}
+    }
+    
+    public class TlsException: SmtpException {
+        public TlsException(string message): base(message) {}
+    }
+    
+    public class Timeout: SmtpException {
+        public Timeout(string message): base(message) {}
+    }
+    
+    public class OtherException: SmtpException {
+        public OtherException(string message): base(message) {}
+    }
+    
+}
+
+class FfiConverterTypeSmtpException : FfiConverterRustBuffer<SmtpException>, CallStatusErrorHandler<SmtpException> {
+    public static FfiConverterTypeSmtpException INSTANCE = new FfiConverterTypeSmtpException();
+
+    public override SmtpException Read(BigEndianStream stream) {
+        var value = stream.ReadInt();
+        switch (value) {
+            case 1: return new SmtpException.TransientSmtpException(FfiConverterString.INSTANCE.Read(stream));
+            case 2: return new SmtpException.PermanentSmtpException(FfiConverterString.INSTANCE.Read(stream));
+            case 3: return new SmtpException.ResponseParseException(FfiConverterString.INSTANCE.Read(stream));
+            case 4: return new SmtpException.InternalClientException(FfiConverterString.INSTANCE.Read(stream));
+            case 5: return new SmtpException.ConnectionException(FfiConverterString.INSTANCE.Read(stream));
+            case 6: return new SmtpException.NetworkException(FfiConverterString.INSTANCE.Read(stream));
+            case 7: return new SmtpException.TlsException(FfiConverterString.INSTANCE.Read(stream));
+            case 8: return new SmtpException.Timeout(FfiConverterString.INSTANCE.Read(stream));
+            case 9: return new SmtpException.OtherException(FfiConverterString.INSTANCE.Read(stream));
+            default:
+                throw new InternalException(String.Format("invalid error value '{0}' in FfiConverterTypeSmtpException.Read()", value));
+        }
+    }
+
+    public override int AllocationSize(SmtpException value) {
+        return 4 + FfiConverterString.INSTANCE.AllocationSize(value.Message);
+    }
+
+    public override void Write(SmtpException value, BigEndianStream stream) {
+        switch (value) {
+            case SmtpException.TransientSmtpException:
+                stream.WriteInt(1);
+                break;
+            case SmtpException.PermanentSmtpException:
+                stream.WriteInt(2);
+                break;
+            case SmtpException.ResponseParseException:
+                stream.WriteInt(3);
+                break;
+            case SmtpException.InternalClientException:
+                stream.WriteInt(4);
+                break;
+            case SmtpException.ConnectionException:
+                stream.WriteInt(5);
+                break;
+            case SmtpException.NetworkException:
+                stream.WriteInt(6);
+                break;
+            case SmtpException.TlsException:
+                stream.WriteInt(7);
+                break;
+            case SmtpException.Timeout:
+                stream.WriteInt(8);
+                break;
+            case SmtpException.OtherException:
+                stream.WriteInt(9);
+                break;
+            default:
+                throw new InternalException(String.Format("invalid error value '{0}' in FfiConverterTypeSmtpException.Write()", value));
+        }
+    }
+}
+
+
+
+
+class FfiConverterOptionalString: FfiConverterRustBuffer<String?> {
+    public static FfiConverterOptionalString INSTANCE = new FfiConverterOptionalString();
+
+    public override String? Read(BigEndianStream stream) {
+        if (stream.ReadByte() == 0) {
+            return null;
+        }
+        return FfiConverterString.INSTANCE.Read(stream);
+    }
+
+    public override int AllocationSize(String? value) {
+        if (value == null) {
+            return 1;
+        } else {
+            return 1 + FfiConverterString.INSTANCE.AllocationSize((String)value);
+        }
+    }
+
+    public override void Write(String? value, BigEndianStream stream) {
+        if (value == null) {
+            stream.WriteByte(0);
+        } else {
+            stream.WriteByte(1);
+            FfiConverterString.INSTANCE.Write((String)value, stream);
+        }
+    }
+}
+
+
+
+
+class FfiConverterDictionaryStringString: FfiConverterRustBuffer<Dictionary<String, String>> {
+    public static FfiConverterDictionaryStringString INSTANCE = new FfiConverterDictionaryStringString();
+
+    public override Dictionary<String, String> Read(BigEndianStream stream) {
+        var result = new Dictionary<String, String>();
+        var len = stream.ReadInt();
+        for (int i = 0; i < len; i++) {
+            var key = FfiConverterString.INSTANCE.Read(stream);
+            var value = FfiConverterString.INSTANCE.Read(stream);
+            result[key] = value;
+        }
+        return result;
+    }
+
+    public override int AllocationSize(Dictionary<String, String> value) {
+        var sizeForLength = 4;
+
+        // details/1-empty-list-as-default-method-parameter.md
+        if (value == null) {
+            return sizeForLength;
+        }
+
+        var sizeForItems = value.Select(item => {
+            return FfiConverterString.INSTANCE.AllocationSize(item.Key) +
+                FfiConverterString.INSTANCE.AllocationSize(item.Value);
+        }).Sum();
+        return sizeForLength + sizeForItems;
+    }
+
+    public override void Write(Dictionary<String, String> value, BigEndianStream stream) {
+        // details/1-empty-list-as-default-method-parameter.md
+        if (value == null) {
+            stream.WriteInt(0);
+            return;
+        }
+
+        stream.WriteInt(value.Count);
+        foreach (var item in value) {
+            FfiConverterString.INSTANCE.Write(item.Key, stream);
+            FfiConverterString.INSTANCE.Write(item.Value, stream);
+        }
+    }
+}
+#pragma warning restore 8625
+public static class RustLibMethods {
+    /// <exception cref="ImapException"></exception>
+    public static String? SimplyFetchInboxTop(String @domain, ushort @port, String @username, String @password) {
+        return FfiConverterOptionalString.INSTANCE.Lift(
+    _UniffiHelpers.RustCallWithError(FfiConverterTypeImapException.INSTANCE, (ref RustCallStatus _status) =>
+    _UniFFILib.uniffi_rust_lib_fn_func_simply_fetch_inbox_top(FfiConverterString.INSTANCE.Lower(@domain), FfiConverterUInt16.INSTANCE.Lower(@port), FfiConverterString.INSTANCE.Lower(@username), FfiConverterString.INSTANCE.Lower(@password), ref _status)
+));
+    }
+
+    /// <exception cref="SmtpException"></exception>
+    public static SmtpResponse SimplySendHtmlEmail(String @smtpServer, String @smtpUsername, String @smtpPassword, Dictionary<String, String> @headers, String @plainTextBody, String @htmlBody) {
+        return FfiConverterTypeSmtpResponse.INSTANCE.Lift(
+    _UniffiHelpers.RustCallWithError(FfiConverterTypeSmtpException.INSTANCE, (ref RustCallStatus _status) =>
+    _UniFFILib.uniffi_rust_lib_fn_func_simply_send_html_email(FfiConverterString.INSTANCE.Lower(@smtpServer), FfiConverterString.INSTANCE.Lower(@smtpUsername), FfiConverterString.INSTANCE.Lower(@smtpPassword), FfiConverterDictionaryStringString.INSTANCE.Lower(@headers), FfiConverterString.INSTANCE.Lower(@plainTextBody), FfiConverterString.INSTANCE.Lower(@htmlBody), ref _status)
+));
+    }
+
+    /// <exception cref="SmtpException"></exception>
+    public static SmtpResponse SimplySendPlainTextEmail(String @smtpServer, String @smtpUsername, String @smtpPassword, Dictionary<String, String> @headers, String @body) {
+        return FfiConverterTypeSmtpResponse.INSTANCE.Lift(
+    _UniffiHelpers.RustCallWithError(FfiConverterTypeSmtpException.INSTANCE, (ref RustCallStatus _status) =>
+    _UniFFILib.uniffi_rust_lib_fn_func_simply_send_plain_text_email(FfiConverterString.INSTANCE.Lower(@smtpServer), FfiConverterString.INSTANCE.Lower(@smtpUsername), FfiConverterString.INSTANCE.Lower(@smtpPassword), FfiConverterDictionaryStringString.INSTANCE.Lower(@headers), FfiConverterString.INSTANCE.Lower(@body), ref _status)
+));
     }
 
 }

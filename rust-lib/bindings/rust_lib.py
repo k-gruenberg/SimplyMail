@@ -38,14 +38,14 @@ class RustBuffer(ctypes.Structure):
 
     @staticmethod
     def alloc(size):
-        return rust_call(_UniFFILib.ffi_rust_lib_af25_rustbuffer_alloc, size)
+        return rust_call(_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_alloc, size)
 
     @staticmethod
     def reserve(rbuf, additional):
-        return rust_call(_UniFFILib.ffi_rust_lib_af25_rustbuffer_reserve, rbuf, additional)
+        return rust_call(_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_reserve, rbuf, additional)
 
     def free(self):
-        return rust_call(_UniFFILib.ffi_rust_lib_af25_rustbuffer_free, self)
+        return rust_call(_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_free, self)
 
     def __str__(self):
         return "RustBuffer(capacity={}, len={}, data={})".format(
@@ -344,17 +344,24 @@ def loadIndirect():
 # This is an implementation detail which will be called internally by the public API.
 
 _UniFFILib = loadIndirect()
-_UniFFILib.rust_lib_af25_fetch_inbox_top.argtypes = (
+_UniFFILib.rust_lib_7fc3_simply_fetch_inbox_top.argtypes = (
     RustBuffer,
     ctypes.c_uint16,
     RustBuffer,
     RustBuffer,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.rust_lib_af25_fetch_inbox_top.restype = None
-_UniFFILib.rust_lib_af25_send_plain_text_email.argtypes = (
+_UniFFILib.rust_lib_7fc3_simply_fetch_inbox_top.restype = RustBuffer
+_UniFFILib.rust_lib_7fc3_simply_send_plain_text_email.argtypes = (
     RustBuffer,
     RustBuffer,
+    RustBuffer,
+    RustBuffer,
+    RustBuffer,
+    ctypes.POINTER(RustCallStatus),
+)
+_UniFFILib.rust_lib_7fc3_simply_send_plain_text_email.restype = RustBuffer
+_UniFFILib.rust_lib_7fc3_simply_send_html_email.argtypes = (
     RustBuffer,
     RustBuffer,
     RustBuffer,
@@ -363,31 +370,40 @@ _UniFFILib.rust_lib_af25_send_plain_text_email.argtypes = (
     RustBuffer,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.rust_lib_af25_send_plain_text_email.restype = None
-_UniFFILib.ffi_rust_lib_af25_rustbuffer_alloc.argtypes = (
+_UniFFILib.rust_lib_7fc3_simply_send_html_email.restype = RustBuffer
+_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_alloc.argtypes = (
     ctypes.c_int32,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.ffi_rust_lib_af25_rustbuffer_alloc.restype = RustBuffer
-_UniFFILib.ffi_rust_lib_af25_rustbuffer_from_bytes.argtypes = (
+_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_alloc.restype = RustBuffer
+_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_from_bytes.argtypes = (
     ForeignBytes,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.ffi_rust_lib_af25_rustbuffer_from_bytes.restype = RustBuffer
-_UniFFILib.ffi_rust_lib_af25_rustbuffer_free.argtypes = (
+_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_from_bytes.restype = RustBuffer
+_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_free.argtypes = (
     RustBuffer,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.ffi_rust_lib_af25_rustbuffer_free.restype = None
-_UniFFILib.ffi_rust_lib_af25_rustbuffer_reserve.argtypes = (
+_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_free.restype = None
+_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_reserve.argtypes = (
     RustBuffer,
     ctypes.c_int32,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.ffi_rust_lib_af25_rustbuffer_reserve.restype = RustBuffer
+_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_reserve.restype = RustBuffer
 
 # Public interface members begin here.
 
+
+class FfiConverterUInt8(FfiConverterPrimitive):
+    @staticmethod
+    def read(buf):
+        return buf.readU8()
+
+    @staticmethod
+    def write(value, buf):
+        buf.writeU8(value)
 
 class FfiConverterUInt16(FfiConverterPrimitive):
     @staticmethod
@@ -424,7 +440,355 @@ class FfiConverterString:
             builder.write(value.encode("utf-8"))
             return builder.finalize()
 
-def fetch_inbox_top(domain,port,username,password):
+
+class SmtpResponse:
+
+    def __init__(self, severity, category, detail, message):
+        self.severity = severity
+        self.category = category
+        self.detail = detail
+        self.message = message
+
+    def __str__(self):
+        return "SmtpResponse(severity={}, category={}, detail={}, message={})".format(self.severity, self.category, self.detail, self.message)
+
+    def __eq__(self, other):
+        if self.severity != other.severity:
+            return False
+        if self.category != other.category:
+            return False
+        if self.detail != other.detail:
+            return False
+        if self.message != other.message:
+            return False
+        return True
+
+class FfiConverterTypeSmtpResponse(FfiConverterRustBuffer):
+    @staticmethod
+    def read(buf):
+        return SmtpResponse(
+            severity=FfiConverterUInt8.read(buf),
+            category=FfiConverterUInt8.read(buf),
+            detail=FfiConverterUInt8.read(buf),
+            message=FfiConverterString.read(buf),
+        )
+
+    @staticmethod
+    def write(value, buf):
+        FfiConverterUInt8.write(value.severity, buf)
+        FfiConverterUInt8.write(value.category, buf)
+        FfiConverterUInt8.write(value.detail, buf)
+        FfiConverterString.write(value.message, buf)
+
+
+
+# ImapError
+# We want to define each variant as a nested class that's also a subclass,
+# which is tricky in Python.  To accomplish this we're going to create each
+# class separated, then manually add the child classes to the base class's
+# __dict__.  All of this happens in dummy class to avoid polluting the module
+# namespace.
+class UniFFIExceptionTmpNamespace:
+    class ImapError(Exception):
+        pass
+    
+    class IoError(ImapError):
+        def __str__(self):
+            return "ImapError.IoError({})".format(repr(super().__str__()))
+
+    ImapError.IoError = IoError
+    class TlsHandshakeError(ImapError):
+        def __str__(self):
+            return "ImapError.TlsHandshakeError({})".format(repr(super().__str__()))
+
+    ImapError.TlsHandshakeError = TlsHandshakeError
+    class TlsError(ImapError):
+        def __str__(self):
+            return "ImapError.TlsError({})".format(repr(super().__str__()))
+
+    ImapError.TlsError = TlsError
+    class BadResponse(ImapError):
+        def __str__(self):
+            return "ImapError.BadResponse({})".format(repr(super().__str__()))
+
+    ImapError.BadResponse = BadResponse
+    class NoResponse(ImapError):
+        def __str__(self):
+            return "ImapError.NoResponse({})".format(repr(super().__str__()))
+
+    ImapError.NoResponse = NoResponse
+    class ConnectionLost(ImapError):
+        def __str__(self):
+            return "ImapError.ConnectionLost({})".format(repr(super().__str__()))
+
+    ImapError.ConnectionLost = ConnectionLost
+    class ParseError(ImapError):
+        def __str__(self):
+            return "ImapError.ParseError({})".format(repr(super().__str__()))
+
+    ImapError.ParseError = ParseError
+    class ValidateError(ImapError):
+        def __str__(self):
+            return "ImapError.ValidateError({})".format(repr(super().__str__()))
+
+    ImapError.ValidateError = ValidateError
+    class AppendError(ImapError):
+        def __str__(self):
+            return "ImapError.AppendError({})".format(repr(super().__str__()))
+
+    ImapError.AppendError = AppendError
+    class Nonexhaustive(ImapError):
+        def __str__(self):
+            return "ImapError.Nonexhaustive({})".format(repr(super().__str__()))
+
+    ImapError.Nonexhaustive = Nonexhaustive
+ImapError = UniFFIExceptionTmpNamespace.ImapError
+del UniFFIExceptionTmpNamespace
+
+
+class FfiConverterTypeImapError(FfiConverterRustBuffer):
+    @staticmethod
+    def read(buf):
+        variant = buf.readI32()
+        if variant == 1:
+            return ImapError.IoError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 2:
+            return ImapError.TlsHandshakeError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 3:
+            return ImapError.TlsError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 4:
+            return ImapError.BadResponse(
+                FfiConverterString.read(buf),
+            )
+        if variant == 5:
+            return ImapError.NoResponse(
+                FfiConverterString.read(buf),
+            )
+        if variant == 6:
+            return ImapError.ConnectionLost(
+                FfiConverterString.read(buf),
+            )
+        if variant == 7:
+            return ImapError.ParseError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 8:
+            return ImapError.ValidateError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 9:
+            return ImapError.AppendError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 10:
+            return ImapError.Nonexhaustive(
+                FfiConverterString.read(buf),
+            )
+        raise InternalError("Raw enum value doesn't match any cases")
+
+    @staticmethod
+    def write(value, buf):
+        if isinstance(value, ImapError.IoError):
+            buf.writeI32(1)
+        if isinstance(value, ImapError.TlsHandshakeError):
+            buf.writeI32(2)
+        if isinstance(value, ImapError.TlsError):
+            buf.writeI32(3)
+        if isinstance(value, ImapError.BadResponse):
+            buf.writeI32(4)
+        if isinstance(value, ImapError.NoResponse):
+            buf.writeI32(5)
+        if isinstance(value, ImapError.ConnectionLost):
+            buf.writeI32(6)
+        if isinstance(value, ImapError.ParseError):
+            buf.writeI32(7)
+        if isinstance(value, ImapError.ValidateError):
+            buf.writeI32(8)
+        if isinstance(value, ImapError.AppendError):
+            buf.writeI32(9)
+        if isinstance(value, ImapError.Nonexhaustive):
+            buf.writeI32(10)
+
+
+
+# SmtpError
+# We want to define each variant as a nested class that's also a subclass,
+# which is tricky in Python.  To accomplish this we're going to create each
+# class separated, then manually add the child classes to the base class's
+# __dict__.  All of this happens in dummy class to avoid polluting the module
+# namespace.
+class UniFFIExceptionTmpNamespace:
+    class SmtpError(Exception):
+        pass
+    
+    class TransientSmtpError(SmtpError):
+        def __str__(self):
+            return "SmtpError.TransientSmtpError({})".format(repr(super().__str__()))
+
+    SmtpError.TransientSmtpError = TransientSmtpError
+    class PermanentSmtpError(SmtpError):
+        def __str__(self):
+            return "SmtpError.PermanentSmtpError({})".format(repr(super().__str__()))
+
+    SmtpError.PermanentSmtpError = PermanentSmtpError
+    class ResponseParseError(SmtpError):
+        def __str__(self):
+            return "SmtpError.ResponseParseError({})".format(repr(super().__str__()))
+
+    SmtpError.ResponseParseError = ResponseParseError
+    class InternalClientError(SmtpError):
+        def __str__(self):
+            return "SmtpError.InternalClientError({})".format(repr(super().__str__()))
+
+    SmtpError.InternalClientError = InternalClientError
+    class ConnectionError(SmtpError):
+        def __str__(self):
+            return "SmtpError.ConnectionError({})".format(repr(super().__str__()))
+
+    SmtpError.ConnectionError = ConnectionError
+    class NetworkError(SmtpError):
+        def __str__(self):
+            return "SmtpError.NetworkError({})".format(repr(super().__str__()))
+
+    SmtpError.NetworkError = NetworkError
+    class TlsError(SmtpError):
+        def __str__(self):
+            return "SmtpError.TlsError({})".format(repr(super().__str__()))
+
+    SmtpError.TlsError = TlsError
+    class Timeout(SmtpError):
+        def __str__(self):
+            return "SmtpError.Timeout({})".format(repr(super().__str__()))
+
+    SmtpError.Timeout = Timeout
+    class OtherError(SmtpError):
+        def __str__(self):
+            return "SmtpError.OtherError({})".format(repr(super().__str__()))
+
+    SmtpError.OtherError = OtherError
+SmtpError = UniFFIExceptionTmpNamespace.SmtpError
+del UniFFIExceptionTmpNamespace
+
+
+class FfiConverterTypeSmtpError(FfiConverterRustBuffer):
+    @staticmethod
+    def read(buf):
+        variant = buf.readI32()
+        if variant == 1:
+            return SmtpError.TransientSmtpError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 2:
+            return SmtpError.PermanentSmtpError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 3:
+            return SmtpError.ResponseParseError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 4:
+            return SmtpError.InternalClientError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 5:
+            return SmtpError.ConnectionError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 6:
+            return SmtpError.NetworkError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 7:
+            return SmtpError.TlsError(
+                FfiConverterString.read(buf),
+            )
+        if variant == 8:
+            return SmtpError.Timeout(
+                FfiConverterString.read(buf),
+            )
+        if variant == 9:
+            return SmtpError.OtherError(
+                FfiConverterString.read(buf),
+            )
+        raise InternalError("Raw enum value doesn't match any cases")
+
+    @staticmethod
+    def write(value, buf):
+        if isinstance(value, SmtpError.TransientSmtpError):
+            buf.writeI32(1)
+        if isinstance(value, SmtpError.PermanentSmtpError):
+            buf.writeI32(2)
+        if isinstance(value, SmtpError.ResponseParseError):
+            buf.writeI32(3)
+        if isinstance(value, SmtpError.InternalClientError):
+            buf.writeI32(4)
+        if isinstance(value, SmtpError.ConnectionError):
+            buf.writeI32(5)
+        if isinstance(value, SmtpError.NetworkError):
+            buf.writeI32(6)
+        if isinstance(value, SmtpError.TlsError):
+            buf.writeI32(7)
+        if isinstance(value, SmtpError.Timeout):
+            buf.writeI32(8)
+        if isinstance(value, SmtpError.OtherError):
+            buf.writeI32(9)
+
+
+
+class FfiConverterOptionalString(FfiConverterRustBuffer):
+    @classmethod
+    def write(cls, value, buf):
+        if value is None:
+            buf.writeU8(0)
+            return
+
+        buf.writeU8(1)
+        FfiConverterString.write(value, buf)
+
+    @classmethod
+    def read(cls, buf):
+        flag = buf.readU8()
+        if flag == 0:
+            return None
+        elif flag == 1:
+            return FfiConverterString.read(buf)
+        else:
+            raise InternalError("Unexpected flag byte for optional type")
+
+
+
+class FfiConverterMapStringString(FfiConverterRustBuffer):
+    @classmethod
+    def write(cls, items, buf):
+        buf.writeI32(len(items))
+        for (key, value) in items.items():
+            FfiConverterString.write(key, buf)
+            FfiConverterString.write(value, buf)
+
+    @classmethod
+    def read(cls, buf):
+        count = buf.readI32()
+        if count < 0:
+            raise InternalError("Unexpected negative map size")
+
+        # It would be nice to use a dict comprehension,
+        # but in Python 3.7 and before the evaluation order is not according to spec,
+        # so we we're reading the value before the key.
+        # This loop makes the order explicit: first reading the key, then the value.
+        d = {}
+        for i in range(count):
+            key = FfiConverterString.read(buf)
+            val = FfiConverterString.read(buf)
+            d[key] = val
+        return d
+
+def simply_fetch_inbox_top(domain,port,username,password):
     domain = domain
     
     port = int(port)
@@ -433,44 +797,64 @@ def fetch_inbox_top(domain,port,username,password):
     
     password = password
     
-    rust_call(_UniFFILib.rust_lib_af25_fetch_inbox_top,
+    return FfiConverterOptionalString.lift(rust_call_with_error(FfiConverterTypeImapError,_UniFFILib.rust_lib_7fc3_simply_fetch_inbox_top,
         FfiConverterString.lower(domain),
         FfiConverterUInt16.lower(port),
         FfiConverterString.lower(username),
-        FfiConverterString.lower(password))
+        FfiConverterString.lower(password)))
 
 
-def send_plain_text_email(_from,reply_to,to,subject,body,smtp_server,smtp_username,smtp_password):
-    _from = _from
-    
-    reply_to = reply_to
-    
-    to = to
-    
-    subject = subject
-    
-    body = body
-    
+
+def simply_send_plain_text_email(smtp_server,smtp_username,smtp_password,headers,body):
     smtp_server = smtp_server
     
     smtp_username = smtp_username
     
     smtp_password = smtp_password
     
-    rust_call(_UniFFILib.rust_lib_af25_send_plain_text_email,
-        FfiConverterString.lower(_from),
-        FfiConverterString.lower(reply_to),
-        FfiConverterString.lower(to),
-        FfiConverterString.lower(subject),
-        FfiConverterString.lower(body),
+    headers = dict((k, v) for (k, v) in headers.items())
+    
+    body = body
+    
+    return FfiConverterTypeSmtpResponse.lift(rust_call_with_error(FfiConverterTypeSmtpError,_UniFFILib.rust_lib_7fc3_simply_send_plain_text_email,
         FfiConverterString.lower(smtp_server),
         FfiConverterString.lower(smtp_username),
-        FfiConverterString.lower(smtp_password))
+        FfiConverterString.lower(smtp_password),
+        FfiConverterMapStringString.lower(headers),
+        FfiConverterString.lower(body)))
+
+
+
+def simply_send_html_email(smtp_server,smtp_username,smtp_password,headers,plain_text_body,html_body):
+    smtp_server = smtp_server
+    
+    smtp_username = smtp_username
+    
+    smtp_password = smtp_password
+    
+    headers = dict((k, v) for (k, v) in headers.items())
+    
+    plain_text_body = plain_text_body
+    
+    html_body = html_body
+    
+    return FfiConverterTypeSmtpResponse.lift(rust_call_with_error(FfiConverterTypeSmtpError,_UniFFILib.rust_lib_7fc3_simply_send_html_email,
+        FfiConverterString.lower(smtp_server),
+        FfiConverterString.lower(smtp_username),
+        FfiConverterString.lower(smtp_password),
+        FfiConverterMapStringString.lower(headers),
+        FfiConverterString.lower(plain_text_body),
+        FfiConverterString.lower(html_body)))
+
 
 
 __all__ = [
     "InternalError",
-    "fetch_inbox_top",
-    "send_plain_text_email",
+    "SmtpResponse",
+    "simply_fetch_inbox_top",
+    "simply_send_plain_text_email",
+    "simply_send_html_email",
+    "ImapError",
+    "SmtpError",
 ]
 

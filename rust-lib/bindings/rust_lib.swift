@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_rust_lib_af25_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_rust_lib_7fc3_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_rust_lib_af25_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_rust_lib_7fc3_rustbuffer_free(self, $0) }
     }
 }
 
@@ -280,6 +280,19 @@ private func makeRustCall<T>(_ callback: (UnsafeMutablePointer<RustCallStatus>) 
 // Public interface members begin here.
 
 
+fileprivate struct FfiConverterUInt8: FfiConverterPrimitive {
+    typealias FfiType = UInt8
+    typealias SwiftType = UInt8
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt8 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: UInt8, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
 fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
     typealias FfiType = UInt16
     typealias SwiftType = UInt16
@@ -331,36 +344,441 @@ fileprivate struct FfiConverterString: FfiConverter {
     }
 }
 
-public func `fetchInboxTop`(`domain`: String, `port`: UInt16, `username`: String, `password`: String)  {
-    try!
+
+public struct SmtpResponse {
+    public var `severity`: UInt8
+    public var `category`: UInt8
+    public var `detail`: UInt8
+    public var `message`: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(`severity`: UInt8, `category`: UInt8, `detail`: UInt8, `message`: String) {
+        self.`severity` = `severity`
+        self.`category` = `category`
+        self.`detail` = `detail`
+        self.`message` = `message`
+    }
+}
+
+
+extension SmtpResponse: Equatable, Hashable {
+    public static func ==(lhs: SmtpResponse, rhs: SmtpResponse) -> Bool {
+        if lhs.`severity` != rhs.`severity` {
+            return false
+        }
+        if lhs.`category` != rhs.`category` {
+            return false
+        }
+        if lhs.`detail` != rhs.`detail` {
+            return false
+        }
+        if lhs.`message` != rhs.`message` {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(`severity`)
+        hasher.combine(`category`)
+        hasher.combine(`detail`)
+        hasher.combine(`message`)
+    }
+}
+
+
+public struct FfiConverterTypeSmtpResponse: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SmtpResponse {
+        return try SmtpResponse(
+            `severity`: FfiConverterUInt8.read(from: &buf), 
+            `category`: FfiConverterUInt8.read(from: &buf), 
+            `detail`: FfiConverterUInt8.read(from: &buf), 
+            `message`: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SmtpResponse, into buf: inout [UInt8]) {
+        FfiConverterUInt8.write(value.`severity`, into: &buf)
+        FfiConverterUInt8.write(value.`category`, into: &buf)
+        FfiConverterUInt8.write(value.`detail`, into: &buf)
+        FfiConverterString.write(value.`message`, into: &buf)
+    }
+}
+
+
+public func FfiConverterTypeSmtpResponse_lift(_ buf: RustBuffer) throws -> SmtpResponse {
+    return try FfiConverterTypeSmtpResponse.lift(buf)
+}
+
+public func FfiConverterTypeSmtpResponse_lower(_ value: SmtpResponse) -> RustBuffer {
+    return FfiConverterTypeSmtpResponse.lower(value)
+}
+
+
+public enum ImapError {
+
     
-    rustCall() {
     
-    rust_lib_af25_fetch_inbox_top(
+    // Simple error enums only carry a message
+    case IoError(message: String)
+    
+    // Simple error enums only carry a message
+    case TlsHandshakeError(message: String)
+    
+    // Simple error enums only carry a message
+    case TlsError(message: String)
+    
+    // Simple error enums only carry a message
+    case BadResponse(message: String)
+    
+    // Simple error enums only carry a message
+    case NoResponse(message: String)
+    
+    // Simple error enums only carry a message
+    case ConnectionLost(message: String)
+    
+    // Simple error enums only carry a message
+    case ParseError(message: String)
+    
+    // Simple error enums only carry a message
+    case ValidateError(message: String)
+    
+    // Simple error enums only carry a message
+    case AppendError(message: String)
+    
+    // Simple error enums only carry a message
+    case Nonexhaustive(message: String)
+    
+}
+
+public struct FfiConverterTypeImapError: FfiConverterRustBuffer {
+    typealias SwiftType = ImapError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ImapError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .IoError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 2: return .TlsHandshakeError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 3: return .TlsError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 4: return .BadResponse(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 5: return .NoResponse(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 6: return .ConnectionLost(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 7: return .ParseError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 8: return .ValidateError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 9: return .AppendError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 10: return .Nonexhaustive(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ImapError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        case let .IoError(message):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(message, into: &buf)
+        case let .TlsHandshakeError(message):
+            writeInt(&buf, Int32(2))
+            FfiConverterString.write(message, into: &buf)
+        case let .TlsError(message):
+            writeInt(&buf, Int32(3))
+            FfiConverterString.write(message, into: &buf)
+        case let .BadResponse(message):
+            writeInt(&buf, Int32(4))
+            FfiConverterString.write(message, into: &buf)
+        case let .NoResponse(message):
+            writeInt(&buf, Int32(5))
+            FfiConverterString.write(message, into: &buf)
+        case let .ConnectionLost(message):
+            writeInt(&buf, Int32(6))
+            FfiConverterString.write(message, into: &buf)
+        case let .ParseError(message):
+            writeInt(&buf, Int32(7))
+            FfiConverterString.write(message, into: &buf)
+        case let .ValidateError(message):
+            writeInt(&buf, Int32(8))
+            FfiConverterString.write(message, into: &buf)
+        case let .AppendError(message):
+            writeInt(&buf, Int32(9))
+            FfiConverterString.write(message, into: &buf)
+        case let .Nonexhaustive(message):
+            writeInt(&buf, Int32(10))
+            FfiConverterString.write(message, into: &buf)
+
+        
+        }
+    }
+}
+
+
+extension ImapError: Equatable, Hashable {}
+
+extension ImapError: Error { }
+
+
+public enum SmtpError {
+
+    
+    
+    // Simple error enums only carry a message
+    case TransientSmtpError(message: String)
+    
+    // Simple error enums only carry a message
+    case PermanentSmtpError(message: String)
+    
+    // Simple error enums only carry a message
+    case ResponseParseError(message: String)
+    
+    // Simple error enums only carry a message
+    case InternalClientError(message: String)
+    
+    // Simple error enums only carry a message
+    case ConnectionError(message: String)
+    
+    // Simple error enums only carry a message
+    case NetworkError(message: String)
+    
+    // Simple error enums only carry a message
+    case TlsError(message: String)
+    
+    // Simple error enums only carry a message
+    case Timeout(message: String)
+    
+    // Simple error enums only carry a message
+    case OtherError(message: String)
+    
+}
+
+public struct FfiConverterTypeSmtpError: FfiConverterRustBuffer {
+    typealias SwiftType = SmtpError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SmtpError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .TransientSmtpError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 2: return .PermanentSmtpError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 3: return .ResponseParseError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 4: return .InternalClientError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 5: return .ConnectionError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 6: return .NetworkError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 7: return .TlsError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 8: return .Timeout(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 9: return .OtherError(
+            message: try FfiConverterString.read(from: &buf)
+        )
+        
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: SmtpError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        case let .TransientSmtpError(message):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(message, into: &buf)
+        case let .PermanentSmtpError(message):
+            writeInt(&buf, Int32(2))
+            FfiConverterString.write(message, into: &buf)
+        case let .ResponseParseError(message):
+            writeInt(&buf, Int32(3))
+            FfiConverterString.write(message, into: &buf)
+        case let .InternalClientError(message):
+            writeInt(&buf, Int32(4))
+            FfiConverterString.write(message, into: &buf)
+        case let .ConnectionError(message):
+            writeInt(&buf, Int32(5))
+            FfiConverterString.write(message, into: &buf)
+        case let .NetworkError(message):
+            writeInt(&buf, Int32(6))
+            FfiConverterString.write(message, into: &buf)
+        case let .TlsError(message):
+            writeInt(&buf, Int32(7))
+            FfiConverterString.write(message, into: &buf)
+        case let .Timeout(message):
+            writeInt(&buf, Int32(8))
+            FfiConverterString.write(message, into: &buf)
+        case let .OtherError(message):
+            writeInt(&buf, Int32(9))
+            FfiConverterString.write(message, into: &buf)
+
+        
+        }
+    }
+}
+
+
+extension SmtpError: Equatable, Hashable {}
+
+extension SmtpError: Error { }
+
+fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
+    typealias SwiftType = String?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+fileprivate struct FfiConverterDictionaryStringString: FfiConverterRustBuffer {
+    public static func write(_ value: [String: String], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterString.write(key, into: &buf)
+            FfiConverterString.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [String: String] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [String: String]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterString.read(from: &buf)
+            let value = try FfiConverterString.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
+    }
+}
+
+public func `simplyFetchInboxTop`(`domain`: String, `port`: UInt16, `username`: String, `password`: String) throws -> String? {
+    return try FfiConverterOptionString.lift(
+        try
+    
+    rustCallWithError(FfiConverterTypeImapError.self) {
+    
+    rust_lib_7fc3_simply_fetch_inbox_top(
         FfiConverterString.lower(`domain`), 
         FfiConverterUInt16.lower(`port`), 
         FfiConverterString.lower(`username`), 
         FfiConverterString.lower(`password`), $0)
 }
+    )
 }
 
 
-public func `sendPlainTextEmail`(`from`: String, `replyTo`: String, `to`: String, `subject`: String, `body`: String, `smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String)  {
-    try!
+
+public func `simplySendPlainTextEmail`(`smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String, `headers`: [String: String], `body`: String) throws -> SmtpResponse {
+    return try FfiConverterTypeSmtpResponse.lift(
+        try
     
-    rustCall() {
+    rustCallWithError(FfiConverterTypeSmtpError.self) {
     
-    rust_lib_af25_send_plain_text_email(
-        FfiConverterString.lower(`from`), 
-        FfiConverterString.lower(`replyTo`), 
-        FfiConverterString.lower(`to`), 
-        FfiConverterString.lower(`subject`), 
-        FfiConverterString.lower(`body`), 
+    rust_lib_7fc3_simply_send_plain_text_email(
         FfiConverterString.lower(`smtpServer`), 
         FfiConverterString.lower(`smtpUsername`), 
-        FfiConverterString.lower(`smtpPassword`), $0)
+        FfiConverterString.lower(`smtpPassword`), 
+        FfiConverterDictionaryStringString.lower(`headers`), 
+        FfiConverterString.lower(`body`), $0)
 }
+    )
 }
+
+
+
+public func `simplySendHtmlEmail`(`smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String, `headers`: [String: String], `plainTextBody`: String, `htmlBody`: String) throws -> SmtpResponse {
+    return try FfiConverterTypeSmtpResponse.lift(
+        try
+    
+    rustCallWithError(FfiConverterTypeSmtpError.self) {
+    
+    rust_lib_7fc3_simply_send_html_email(
+        FfiConverterString.lower(`smtpServer`), 
+        FfiConverterString.lower(`smtpUsername`), 
+        FfiConverterString.lower(`smtpPassword`), 
+        FfiConverterDictionaryStringString.lower(`headers`), 
+        FfiConverterString.lower(`plainTextBody`), 
+        FfiConverterString.lower(`htmlBody`), $0)
+}
+    )
+}
+
 
 
 /**

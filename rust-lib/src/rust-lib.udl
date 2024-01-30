@@ -1,5 +1,44 @@
 namespace rust_lib {
-    void fetch_inbox_top([ByRef]string domain, u16 port, [ByRef]string username, [ByRef]string password);
+    [Throws=ImapError]
+    string? simply_fetch_inbox_top([ByRef]string domain, u16 port, [ByRef]string username, [ByRef]string password);
 
-    void send_plain_text_email([ByRef]string from, [ByRef]string reply_to, [ByRef]string to, [ByRef]string subject, [ByRef]string body, [ByRef]string smtp_server, [ByRef]string smtp_username, [ByRef]string smtp_password);
+    [Throws=SmtpError]
+    SmtpResponse simply_send_plain_text_email([ByRef]string smtp_server, [ByRef]string smtp_username, [ByRef]string smtp_password, record<string, string> headers, [ByRef]string body);
+
+    [Throws=SmtpError]
+    SmtpResponse simply_send_html_email([ByRef]string smtp_server, [ByRef]string smtp_username, [ByRef]string smtp_password, record<string, string> headers, [ByRef]string plain_text_body, [ByRef]string html_body);
+};
+
+[Error]
+enum ImapError {
+    "IoError",
+    "TlsHandshakeError",
+    "TlsError",
+    "BadResponse",
+    "NoResponse",
+    "ConnectionLost",
+    "ParseError",
+    "ValidateError",
+    "AppendError",
+    "__Nonexhaustive",
+};
+
+[Error]
+enum SmtpError {
+    "TransientSmtpError",
+    "PermanentSmtpError",
+    "ResponseParseError",
+    "InternalClientError",
+    "ConnectionError",
+    "NetworkError",
+    "TlsError",
+    "Timeout",
+    "OtherError"
+};
+
+dictionary SmtpResponse {
+    u8 severity;
+    u8 category;
+    u8 detail;
+    string message;
 };
