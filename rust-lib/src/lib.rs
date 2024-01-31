@@ -109,6 +109,16 @@ fn get_imap_session_gmail_oauth2(username: &str, access_token: &str) -> Result<S
     return imap_session
 }
 
+pub fn simply_check_imap(domain: &str, port: u16, username: &str, password: &str) -> Result<(), ImapError> {
+    match get_imap_session(domain, port, username, password) {
+    	Ok(mut imap_session) => { // If establishing a session was successful ...
+    		imap_session.logout()?; // ...logout again...
+    		return Ok(()) // ...and return OK.
+    	},
+    	Err(err) => return Err(err.into()), // If not, return the error.
+    }
+}
+
 // cf. https://crates.io/crates/imap/2.4.1
 pub fn simply_fetch_inbox_top(domain: &str, port: u16, username: &str, password: &str) -> Result<Option<String>, ImapError> { // -> imap::error::Result<Option<String>>
     let mut imap_session = get_imap_session(domain, port, username, password)?;
@@ -236,22 +246,35 @@ fn prepare_headers(headers: HashMap<String, String>) -> lettre::message::Message
 	return email
 }
 
-fn send_email(smtp_server: &str, smtp_username: &str, smtp_password: &str,
-	email: lettre::Message) -> Result<SmtpResponse, SmtpError> {
+// cf. https://crates.io/crates/lettre
+fn get_smtp_transport(smtp_server: &str, smtp_username: &str, smtp_password: &str) -> SmtpTransport {
 	//let creds = Credentials::new("smtp_username".to_owned(), "smtp_password".to_owned());
 	let creds = Credentials::new(smtp_username.to_owned(), smtp_password.to_owned());
 
-	// Open a remote connection to gmail
+	// Open a remote connection to gmail, for example
 	let mailer = SmtpTransport::relay(smtp_server) //let mailer = SmtpTransport::relay("smtp.gmail.com")
 	    .unwrap()
 	    .credentials(creds)
 	    .build();
+
+	return mailer
+}
+
+// cf. https://crates.io/crates/lettre
+fn send_email(smtp_server: &str, smtp_username: &str, smtp_password: &str,
+	email: lettre::Message) -> Result<SmtpResponse, SmtpError> {
+	let mailer = get_smtp_transport(smtp_server, smtp_username, smtp_password);
 
 	// Send the email
 	return match mailer.send(&email) {
 	    Ok(response) => Ok(response.into()), //println!("Email sent successfully!"), // lettre::transport::smtp::response::Response
 	    Err(e) => Err(e.into()) //panic!("Could not send email: {e:?}"), // lettre::transport::smtp::Error
 	}
+}
+
+pub fn simply_check_smtp(smtp_server: &str, smtp_username: &str, smtp_password: &str) -> Result<bool, SmtpError> {
+    let mailer = get_smtp_transport(smtp_server, smtp_username, smtp_password);
+    return mailer.test_connection().map_err(|err| err.into())
 }
 
 // cf. https://crates.io/crates/lettre

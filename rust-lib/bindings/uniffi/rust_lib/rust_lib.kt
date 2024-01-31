@@ -40,7 +40,7 @@ open class RustBuffer : Structure() {
 
     companion object {
         internal fun alloc(size: Int = 0) = rustCall() { status ->
-            _UniFFILib.INSTANCE.ffi_rust_lib_7fc3_rustbuffer_alloc(size, status).also {
+            _UniFFILib.INSTANCE.ffi_rust_lib_dab3_rustbuffer_alloc(size, status).also {
                 if(it.data == null) {
                    throw RuntimeException("RustBuffer.alloc() returned null data pointer (size=${size})")
                }
@@ -48,7 +48,7 @@ open class RustBuffer : Structure() {
         }
 
         internal fun free(buf: RustBuffer.ByValue) = rustCall() { status ->
-            _UniFFILib.INSTANCE.ffi_rust_lib_7fc3_rustbuffer_free(buf, status)
+            _UniFFILib.INSTANCE.ffi_rust_lib_dab3_rustbuffer_free(buf, status)
         }
     }
 
@@ -257,31 +257,39 @@ internal interface _UniFFILib : Library {
         }
     }
 
-    fun rust_lib_7fc3_simply_fetch_inbox_top(`domain`: RustBuffer.ByValue,`port`: Short,`username`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,
-    _uniffi_out_err: RustCallStatus
-    ): RustBuffer.ByValue
-
-    fun rust_lib_7fc3_simply_send_plain_text_email(`smtpServer`: RustBuffer.ByValue,`smtpUsername`: RustBuffer.ByValue,`smtpPassword`: RustBuffer.ByValue,`headers`: RustBuffer.ByValue,`body`: RustBuffer.ByValue,
-    _uniffi_out_err: RustCallStatus
-    ): RustBuffer.ByValue
-
-    fun rust_lib_7fc3_simply_send_html_email(`smtpServer`: RustBuffer.ByValue,`smtpUsername`: RustBuffer.ByValue,`smtpPassword`: RustBuffer.ByValue,`headers`: RustBuffer.ByValue,`plainTextBody`: RustBuffer.ByValue,`htmlBody`: RustBuffer.ByValue,
-    _uniffi_out_err: RustCallStatus
-    ): RustBuffer.ByValue
-
-    fun ffi_rust_lib_7fc3_rustbuffer_alloc(`size`: Int,
-    _uniffi_out_err: RustCallStatus
-    ): RustBuffer.ByValue
-
-    fun ffi_rust_lib_7fc3_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,
-    _uniffi_out_err: RustCallStatus
-    ): RustBuffer.ByValue
-
-    fun ffi_rust_lib_7fc3_rustbuffer_free(`buf`: RustBuffer.ByValue,
+    fun rust_lib_dab3_simply_check_imap(`domain`: RustBuffer.ByValue,`port`: Short,`username`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,
     _uniffi_out_err: RustCallStatus
     ): Unit
 
-    fun ffi_rust_lib_7fc3_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Int,
+    fun rust_lib_dab3_simply_fetch_inbox_top(`domain`: RustBuffer.ByValue,`port`: Short,`username`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,
+    _uniffi_out_err: RustCallStatus
+    ): RustBuffer.ByValue
+
+    fun rust_lib_dab3_simply_check_smtp(`smtpServer`: RustBuffer.ByValue,`smtpUsername`: RustBuffer.ByValue,`smtpPassword`: RustBuffer.ByValue,
+    _uniffi_out_err: RustCallStatus
+    ): Byte
+
+    fun rust_lib_dab3_simply_send_plain_text_email(`smtpServer`: RustBuffer.ByValue,`smtpUsername`: RustBuffer.ByValue,`smtpPassword`: RustBuffer.ByValue,`headers`: RustBuffer.ByValue,`body`: RustBuffer.ByValue,
+    _uniffi_out_err: RustCallStatus
+    ): RustBuffer.ByValue
+
+    fun rust_lib_dab3_simply_send_html_email(`smtpServer`: RustBuffer.ByValue,`smtpUsername`: RustBuffer.ByValue,`smtpPassword`: RustBuffer.ByValue,`headers`: RustBuffer.ByValue,`plainTextBody`: RustBuffer.ByValue,`htmlBody`: RustBuffer.ByValue,
+    _uniffi_out_err: RustCallStatus
+    ): RustBuffer.ByValue
+
+    fun ffi_rust_lib_dab3_rustbuffer_alloc(`size`: Int,
+    _uniffi_out_err: RustCallStatus
+    ): RustBuffer.ByValue
+
+    fun ffi_rust_lib_dab3_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,
+    _uniffi_out_err: RustCallStatus
+    ): RustBuffer.ByValue
+
+    fun ffi_rust_lib_dab3_rustbuffer_free(`buf`: RustBuffer.ByValue,
+    _uniffi_out_err: RustCallStatus
+    ): Unit
+
+    fun ffi_rust_lib_dab3_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Int,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
@@ -328,6 +336,26 @@ public object FfiConverterUShort: FfiConverter<UShort, Short> {
 
     override fun write(value: UShort, buf: ByteBuffer) {
         buf.putShort(value.toShort())
+    }
+}
+
+public object FfiConverterBoolean: FfiConverter<Boolean, Byte> {
+    override fun lift(value: Byte): Boolean {
+        return value.toInt() != 0
+    }
+
+    override fun read(buf: ByteBuffer): Boolean {
+        return lift(buf.get())
+    }
+
+    override fun lower(value: Boolean): Byte {
+        return if (value) 1.toByte() else 0.toByte()
+    }
+
+    override fun allocationSize(value: Boolean) = 1
+
+    override fun write(value: Boolean, buf: ByteBuffer) {
+        buf.put(lower(value))
     }
 }
 
@@ -662,10 +690,28 @@ public object FfiConverterMapStringString: FfiConverterRustBuffer<Map<String, St
 }
 @Throws(ImapException::class)
 
+fun `simplyCheckImap`(`domain`: String, `port`: UShort, `username`: String, `password`: String) =
+    
+    rustCallWithError(ImapException) { _status ->
+    _UniFFILib.INSTANCE.rust_lib_dab3_simply_check_imap(FfiConverterString.lower(`domain`), FfiConverterUShort.lower(`port`), FfiConverterString.lower(`username`), FfiConverterString.lower(`password`), _status)
+}
+
+@Throws(ImapException::class)
+
 fun `simplyFetchInboxTop`(`domain`: String, `port`: UShort, `username`: String, `password`: String): String? {
     return FfiConverterOptionalString.lift(
     rustCallWithError(ImapException) { _status ->
-    _UniFFILib.INSTANCE.rust_lib_7fc3_simply_fetch_inbox_top(FfiConverterString.lower(`domain`), FfiConverterUShort.lower(`port`), FfiConverterString.lower(`username`), FfiConverterString.lower(`password`), _status)
+    _UniFFILib.INSTANCE.rust_lib_dab3_simply_fetch_inbox_top(FfiConverterString.lower(`domain`), FfiConverterUShort.lower(`port`), FfiConverterString.lower(`username`), FfiConverterString.lower(`password`), _status)
+})
+}
+
+
+@Throws(SmtpException::class)
+
+fun `simplyCheckSmtp`(`smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String): Boolean {
+    return FfiConverterBoolean.lift(
+    rustCallWithError(SmtpException) { _status ->
+    _UniFFILib.INSTANCE.rust_lib_dab3_simply_check_smtp(FfiConverterString.lower(`smtpServer`), FfiConverterString.lower(`smtpUsername`), FfiConverterString.lower(`smtpPassword`), _status)
 })
 }
 
@@ -675,7 +721,7 @@ fun `simplyFetchInboxTop`(`domain`: String, `port`: UShort, `username`: String, 
 fun `simplySendPlainTextEmail`(`smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String, `headers`: Map<String, String>, `body`: String): SmtpResponse {
     return FfiConverterTypeSmtpResponse.lift(
     rustCallWithError(SmtpException) { _status ->
-    _UniFFILib.INSTANCE.rust_lib_7fc3_simply_send_plain_text_email(FfiConverterString.lower(`smtpServer`), FfiConverterString.lower(`smtpUsername`), FfiConverterString.lower(`smtpPassword`), FfiConverterMapStringString.lower(`headers`), FfiConverterString.lower(`body`), _status)
+    _UniFFILib.INSTANCE.rust_lib_dab3_simply_send_plain_text_email(FfiConverterString.lower(`smtpServer`), FfiConverterString.lower(`smtpUsername`), FfiConverterString.lower(`smtpPassword`), FfiConverterMapStringString.lower(`headers`), FfiConverterString.lower(`body`), _status)
 })
 }
 
@@ -685,7 +731,7 @@ fun `simplySendPlainTextEmail`(`smtpServer`: String, `smtpUsername`: String, `sm
 fun `simplySendHtmlEmail`(`smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String, `headers`: Map<String, String>, `plainTextBody`: String, `htmlBody`: String): SmtpResponse {
     return FfiConverterTypeSmtpResponse.lift(
     rustCallWithError(SmtpException) { _status ->
-    _UniFFILib.INSTANCE.rust_lib_7fc3_simply_send_html_email(FfiConverterString.lower(`smtpServer`), FfiConverterString.lower(`smtpUsername`), FfiConverterString.lower(`smtpPassword`), FfiConverterMapStringString.lower(`headers`), FfiConverterString.lower(`plainTextBody`), FfiConverterString.lower(`htmlBody`), _status)
+    _UniFFILib.INSTANCE.rust_lib_dab3_simply_send_html_email(FfiConverterString.lower(`smtpServer`), FfiConverterString.lower(`smtpUsername`), FfiConverterString.lower(`smtpPassword`), FfiConverterMapStringString.lower(`headers`), FfiConverterString.lower(`plainTextBody`), FfiConverterString.lower(`htmlBody`), _status)
 })
 }
 

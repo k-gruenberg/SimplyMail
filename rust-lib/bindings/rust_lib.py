@@ -38,14 +38,14 @@ class RustBuffer(ctypes.Structure):
 
     @staticmethod
     def alloc(size):
-        return rust_call(_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_alloc, size)
+        return rust_call(_UniFFILib.ffi_rust_lib_dab3_rustbuffer_alloc, size)
 
     @staticmethod
     def reserve(rbuf, additional):
-        return rust_call(_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_reserve, rbuf, additional)
+        return rust_call(_UniFFILib.ffi_rust_lib_dab3_rustbuffer_reserve, rbuf, additional)
 
     def free(self):
-        return rust_call(_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_free, self)
+        return rust_call(_UniFFILib.ffi_rust_lib_dab3_rustbuffer_free, self)
 
     def __str__(self):
         return "RustBuffer(capacity={}, len={}, data={})".format(
@@ -344,15 +344,30 @@ def loadIndirect():
 # This is an implementation detail which will be called internally by the public API.
 
 _UniFFILib = loadIndirect()
-_UniFFILib.rust_lib_7fc3_simply_fetch_inbox_top.argtypes = (
+_UniFFILib.rust_lib_dab3_simply_check_imap.argtypes = (
     RustBuffer,
     ctypes.c_uint16,
     RustBuffer,
     RustBuffer,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.rust_lib_7fc3_simply_fetch_inbox_top.restype = RustBuffer
-_UniFFILib.rust_lib_7fc3_simply_send_plain_text_email.argtypes = (
+_UniFFILib.rust_lib_dab3_simply_check_imap.restype = None
+_UniFFILib.rust_lib_dab3_simply_fetch_inbox_top.argtypes = (
+    RustBuffer,
+    ctypes.c_uint16,
+    RustBuffer,
+    RustBuffer,
+    ctypes.POINTER(RustCallStatus),
+)
+_UniFFILib.rust_lib_dab3_simply_fetch_inbox_top.restype = RustBuffer
+_UniFFILib.rust_lib_dab3_simply_check_smtp.argtypes = (
+    RustBuffer,
+    RustBuffer,
+    RustBuffer,
+    ctypes.POINTER(RustCallStatus),
+)
+_UniFFILib.rust_lib_dab3_simply_check_smtp.restype = ctypes.c_int8
+_UniFFILib.rust_lib_dab3_simply_send_plain_text_email.argtypes = (
     RustBuffer,
     RustBuffer,
     RustBuffer,
@@ -360,8 +375,8 @@ _UniFFILib.rust_lib_7fc3_simply_send_plain_text_email.argtypes = (
     RustBuffer,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.rust_lib_7fc3_simply_send_plain_text_email.restype = RustBuffer
-_UniFFILib.rust_lib_7fc3_simply_send_html_email.argtypes = (
+_UniFFILib.rust_lib_dab3_simply_send_plain_text_email.restype = RustBuffer
+_UniFFILib.rust_lib_dab3_simply_send_html_email.argtypes = (
     RustBuffer,
     RustBuffer,
     RustBuffer,
@@ -370,28 +385,28 @@ _UniFFILib.rust_lib_7fc3_simply_send_html_email.argtypes = (
     RustBuffer,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.rust_lib_7fc3_simply_send_html_email.restype = RustBuffer
-_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_alloc.argtypes = (
+_UniFFILib.rust_lib_dab3_simply_send_html_email.restype = RustBuffer
+_UniFFILib.ffi_rust_lib_dab3_rustbuffer_alloc.argtypes = (
     ctypes.c_int32,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_alloc.restype = RustBuffer
-_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_from_bytes.argtypes = (
+_UniFFILib.ffi_rust_lib_dab3_rustbuffer_alloc.restype = RustBuffer
+_UniFFILib.ffi_rust_lib_dab3_rustbuffer_from_bytes.argtypes = (
     ForeignBytes,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_from_bytes.restype = RustBuffer
-_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_free.argtypes = (
+_UniFFILib.ffi_rust_lib_dab3_rustbuffer_from_bytes.restype = RustBuffer
+_UniFFILib.ffi_rust_lib_dab3_rustbuffer_free.argtypes = (
     RustBuffer,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_free.restype = None
-_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_reserve.argtypes = (
+_UniFFILib.ffi_rust_lib_dab3_rustbuffer_free.restype = None
+_UniFFILib.ffi_rust_lib_dab3_rustbuffer_reserve.argtypes = (
     RustBuffer,
     ctypes.c_int32,
     ctypes.POINTER(RustCallStatus),
 )
-_UniFFILib.ffi_rust_lib_7fc3_rustbuffer_reserve.restype = RustBuffer
+_UniFFILib.ffi_rust_lib_dab3_rustbuffer_reserve.restype = RustBuffer
 
 # Public interface members begin here.
 
@@ -413,6 +428,23 @@ class FfiConverterUInt16(FfiConverterPrimitive):
     @staticmethod
     def write(value, buf):
         buf.writeU16(value)
+
+class FfiConverterBool:
+    @classmethod
+    def read(cls, buf):
+        return cls.lift(buf.readU8())
+
+    @classmethod
+    def write(cls, value, buf):
+        buf.writeU8(cls.lower(value))
+
+    @staticmethod
+    def lift(value):
+        return int(value) != 0
+
+    @staticmethod
+    def lower(value):
+        return 1 if value else 0
 
 class FfiConverterString:
     @staticmethod
@@ -788,6 +820,22 @@ class FfiConverterMapStringString(FfiConverterRustBuffer):
             d[key] = val
         return d
 
+def simply_check_imap(domain,port,username,password):
+    domain = domain
+    
+    port = int(port)
+    
+    username = username
+    
+    password = password
+    
+    rust_call_with_error(FfiConverterTypeImapError,_UniFFILib.rust_lib_dab3_simply_check_imap,
+        FfiConverterString.lower(domain),
+        FfiConverterUInt16.lower(port),
+        FfiConverterString.lower(username),
+        FfiConverterString.lower(password))
+
+
 def simply_fetch_inbox_top(domain,port,username,password):
     domain = domain
     
@@ -797,11 +845,25 @@ def simply_fetch_inbox_top(domain,port,username,password):
     
     password = password
     
-    return FfiConverterOptionalString.lift(rust_call_with_error(FfiConverterTypeImapError,_UniFFILib.rust_lib_7fc3_simply_fetch_inbox_top,
+    return FfiConverterOptionalString.lift(rust_call_with_error(FfiConverterTypeImapError,_UniFFILib.rust_lib_dab3_simply_fetch_inbox_top,
         FfiConverterString.lower(domain),
         FfiConverterUInt16.lower(port),
         FfiConverterString.lower(username),
         FfiConverterString.lower(password)))
+
+
+
+def simply_check_smtp(smtp_server,smtp_username,smtp_password):
+    smtp_server = smtp_server
+    
+    smtp_username = smtp_username
+    
+    smtp_password = smtp_password
+    
+    return FfiConverterBool.lift(rust_call_with_error(FfiConverterTypeSmtpError,_UniFFILib.rust_lib_dab3_simply_check_smtp,
+        FfiConverterString.lower(smtp_server),
+        FfiConverterString.lower(smtp_username),
+        FfiConverterString.lower(smtp_password)))
 
 
 
@@ -816,7 +878,7 @@ def simply_send_plain_text_email(smtp_server,smtp_username,smtp_password,headers
     
     body = body
     
-    return FfiConverterTypeSmtpResponse.lift(rust_call_with_error(FfiConverterTypeSmtpError,_UniFFILib.rust_lib_7fc3_simply_send_plain_text_email,
+    return FfiConverterTypeSmtpResponse.lift(rust_call_with_error(FfiConverterTypeSmtpError,_UniFFILib.rust_lib_dab3_simply_send_plain_text_email,
         FfiConverterString.lower(smtp_server),
         FfiConverterString.lower(smtp_username),
         FfiConverterString.lower(smtp_password),
@@ -838,7 +900,7 @@ def simply_send_html_email(smtp_server,smtp_username,smtp_password,headers,plain
     
     html_body = html_body
     
-    return FfiConverterTypeSmtpResponse.lift(rust_call_with_error(FfiConverterTypeSmtpError,_UniFFILib.rust_lib_7fc3_simply_send_html_email,
+    return FfiConverterTypeSmtpResponse.lift(rust_call_with_error(FfiConverterTypeSmtpError,_UniFFILib.rust_lib_dab3_simply_send_html_email,
         FfiConverterString.lower(smtp_server),
         FfiConverterString.lower(smtp_username),
         FfiConverterString.lower(smtp_password),
@@ -851,7 +913,9 @@ def simply_send_html_email(smtp_server,smtp_username,smtp_password,headers,plain
 __all__ = [
     "InternalError",
     "SmtpResponse",
+    "simply_check_imap",
     "simply_fetch_inbox_top",
+    "simply_check_smtp",
     "simply_send_plain_text_email",
     "simply_send_html_email",
     "ImapError",

@@ -417,6 +417,14 @@ static class _UniFFILib {
         }
 
     [DllImport("rust_lib")]
+    public static extern void uniffi_rust_lib_fn_func_simply_check_imap(RustBuffer @domain,ushort @port,RustBuffer @username,RustBuffer @password,ref RustCallStatus _uniffi_out_err
+    );
+
+    [DllImport("rust_lib")]
+    public static extern sbyte uniffi_rust_lib_fn_func_simply_check_smtp(RustBuffer @smtpServer,RustBuffer @smtpUsername,RustBuffer @smtpPassword,ref RustCallStatus _uniffi_out_err
+    );
+
+    [DllImport("rust_lib")]
     public static extern RustBuffer uniffi_rust_lib_fn_func_simply_fetch_inbox_top(RustBuffer @domain,ushort @port,RustBuffer @username,RustBuffer @password,ref RustCallStatus _uniffi_out_err
     );
 
@@ -657,6 +665,14 @@ static class _UniFFILib {
     );
 
     [DllImport("rust_lib")]
+    public static extern ushort uniffi_rust_lib_checksum_func_simply_check_imap(
+    );
+
+    [DllImport("rust_lib")]
+    public static extern ushort uniffi_rust_lib_checksum_func_simply_check_smtp(
+    );
+
+    [DllImport("rust_lib")]
     public static extern ushort uniffi_rust_lib_checksum_func_simply_fetch_inbox_top(
     );
 
@@ -682,6 +698,18 @@ static class _UniFFILib {
     }
 
     static void uniffiCheckApiChecksums() {
+        {
+            var checksum = _UniFFILib.uniffi_rust_lib_checksum_func_simply_check_imap();
+            if (checksum != 47995) {
+                throw new UniffiContractChecksumException($"uniffi.rust_lib: uniffi bindings expected function `uniffi_rust_lib_checksum_func_simply_check_imap` checksum `47995`, library returned `{checksum}`");
+            }
+        }
+        {
+            var checksum = _UniFFILib.uniffi_rust_lib_checksum_func_simply_check_smtp();
+            if (checksum != 57428) {
+                throw new UniffiContractChecksumException($"uniffi.rust_lib: uniffi bindings expected function `uniffi_rust_lib_checksum_func_simply_check_smtp` checksum `57428`, library returned `{checksum}`");
+            }
+        }
         {
             var checksum = _UniFFILib.uniffi_rust_lib_checksum_func_simply_fetch_inbox_top();
             if (checksum != 27917) {
@@ -757,6 +785,32 @@ class FfiConverterUInt16: FfiConverter<ushort, ushort> {
 
     public override void Write(ushort value, BigEndianStream stream) {
         stream.WriteUShort(value);
+    }
+}
+
+
+
+class FfiConverterBoolean: FfiConverter<bool, sbyte> {
+    public static FfiConverterBoolean INSTANCE = new FfiConverterBoolean();
+
+    public override bool Lift(sbyte value) {
+        return value != 0;
+    }
+
+    public override bool Read(BigEndianStream stream) {
+        return Lift(stream.ReadSByte());
+    }
+
+    public override sbyte Lower(bool value) {
+        return value ? (sbyte)1 : (sbyte)0;
+    }
+
+    public override int AllocationSize(bool value) {
+        return (sbyte)1;
+    }
+
+    public override void Write(bool value, BigEndianStream stream) {
+        stream.WriteSByte(Lower(value));
     }
 }
 
@@ -1146,6 +1200,22 @@ class FfiConverterDictionaryStringString: FfiConverterRustBuffer<Dictionary<Stri
 }
 #pragma warning restore 8625
 public static class RustLibMethods {
+    /// <exception cref="ImapException"></exception>
+    public static void SimplyCheckImap(String @domain, ushort @port, String @username, String @password) {
+        
+    _UniffiHelpers.RustCallWithError(FfiConverterTypeImapException.INSTANCE, (ref RustCallStatus _status) =>
+    _UniFFILib.uniffi_rust_lib_fn_func_simply_check_imap(FfiConverterString.INSTANCE.Lower(@domain), FfiConverterUInt16.INSTANCE.Lower(@port), FfiConverterString.INSTANCE.Lower(@username), FfiConverterString.INSTANCE.Lower(@password), ref _status)
+);
+    }
+
+    /// <exception cref="SmtpException"></exception>
+    public static bool SimplyCheckSmtp(String @smtpServer, String @smtpUsername, String @smtpPassword) {
+        return FfiConverterBoolean.INSTANCE.Lift(
+    _UniffiHelpers.RustCallWithError(FfiConverterTypeSmtpException.INSTANCE, (ref RustCallStatus _status) =>
+    _UniFFILib.uniffi_rust_lib_fn_func_simply_check_smtp(FfiConverterString.INSTANCE.Lower(@smtpServer), FfiConverterString.INSTANCE.Lower(@smtpUsername), FfiConverterString.INSTANCE.Lower(@smtpPassword), ref _status)
+));
+    }
+
     /// <exception cref="ImapException"></exception>
     public static String? SimplyFetchInboxTop(String @domain, ushort @port, String @username, String @password) {
         return FfiConverterOptionalString.INSTANCE.Lift(

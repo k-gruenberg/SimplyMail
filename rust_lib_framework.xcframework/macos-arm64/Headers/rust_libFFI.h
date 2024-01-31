@@ -46,31 +46,39 @@ typedef struct RustCallStatus {
 // ⚠️ increment the version suffix in all instances of UNIFFI_SHARED_HEADER_V4 in this file.           ⚠️
 #endif // def UNIFFI_SHARED_H
 
-RustBuffer rust_lib_7fc3_simply_fetch_inbox_top(
+void rust_lib_dab3_simply_check_imap(
       RustBuffer domain,uint16_t port,RustBuffer username,RustBuffer password,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer rust_lib_7fc3_simply_send_plain_text_email(
+RustBuffer rust_lib_dab3_simply_fetch_inbox_top(
+      RustBuffer domain,uint16_t port,RustBuffer username,RustBuffer password,
+    RustCallStatus *_Nonnull out_status
+    );
+int8_t rust_lib_dab3_simply_check_smtp(
+      RustBuffer smtp_server,RustBuffer smtp_username,RustBuffer smtp_password,
+    RustCallStatus *_Nonnull out_status
+    );
+RustBuffer rust_lib_dab3_simply_send_plain_text_email(
       RustBuffer smtp_server,RustBuffer smtp_username,RustBuffer smtp_password,RustBuffer headers,RustBuffer body,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer rust_lib_7fc3_simply_send_html_email(
+RustBuffer rust_lib_dab3_simply_send_html_email(
       RustBuffer smtp_server,RustBuffer smtp_username,RustBuffer smtp_password,RustBuffer headers,RustBuffer plain_text_body,RustBuffer html_body,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_rust_lib_7fc3_rustbuffer_alloc(
+RustBuffer ffi_rust_lib_dab3_rustbuffer_alloc(
       int32_t size,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_rust_lib_7fc3_rustbuffer_from_bytes(
+RustBuffer ffi_rust_lib_dab3_rustbuffer_from_bytes(
       ForeignBytes bytes,
     RustCallStatus *_Nonnull out_status
     );
-void ffi_rust_lib_7fc3_rustbuffer_free(
+void ffi_rust_lib_dab3_rustbuffer_free(
       RustBuffer buf,
     RustCallStatus *_Nonnull out_status
     );
-RustBuffer ffi_rust_lib_7fc3_rustbuffer_reserve(
+RustBuffer ffi_rust_lib_dab3_rustbuffer_reserve(
       RustBuffer buf,int32_t additional,
     RustCallStatus *_Nonnull out_status
     );

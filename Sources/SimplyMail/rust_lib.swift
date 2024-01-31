@@ -19,13 +19,13 @@ fileprivate extension RustBuffer {
     }
 
     static func from(_ ptr: UnsafeBufferPointer<UInt8>) -> RustBuffer {
-        try! rustCall { ffi_rust_lib_7fc3_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
+        try! rustCall { ffi_rust_lib_dab3_rustbuffer_from_bytes(ForeignBytes(bufferPointer: ptr), $0) }
     }
 
     // Frees the buffer in place.
     // The buffer must not be used after this is called.
     func deallocate() {
-        try! rustCall { ffi_rust_lib_7fc3_rustbuffer_free(self, $0) }
+        try! rustCall { ffi_rust_lib_dab3_rustbuffer_free(self, $0) }
     }
 }
 
@@ -302,6 +302,27 @@ fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
     }
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+fileprivate struct FfiConverterBool : FfiConverter {
+    typealias FfiType = Int8
+    typealias SwiftType = Bool
+
+    public static func lift(_ value: Int8) throws -> Bool {
+        return value != 0
+    }
+
+    public static func lower(_ value: Bool) -> Int8 {
+        return value ? 1 : 0
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Bool {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: Bool, into buf: inout [UInt8]) {
         writeInt(&buf, lower(value))
     }
 }
@@ -727,17 +748,47 @@ fileprivate struct FfiConverterDictionaryStringString: FfiConverterRustBuffer {
     }
 }
 
+public func `simplyCheckImap`(`domain`: String, `port`: UInt16, `username`: String, `password`: String) throws {
+    try
+    
+    rustCallWithError(FfiConverterTypeImapError.self) {
+    
+    rust_lib_dab3_simply_check_imap(
+        FfiConverterString.lower(`domain`), 
+        FfiConverterUInt16.lower(`port`), 
+        FfiConverterString.lower(`username`), 
+        FfiConverterString.lower(`password`), $0)
+}
+}
+
+
 public func `simplyFetchInboxTop`(`domain`: String, `port`: UInt16, `username`: String, `password`: String) throws -> String? {
     return try FfiConverterOptionString.lift(
         try
     
     rustCallWithError(FfiConverterTypeImapError.self) {
     
-    rust_lib_7fc3_simply_fetch_inbox_top(
+    rust_lib_dab3_simply_fetch_inbox_top(
         FfiConverterString.lower(`domain`), 
         FfiConverterUInt16.lower(`port`), 
         FfiConverterString.lower(`username`), 
         FfiConverterString.lower(`password`), $0)
+}
+    )
+}
+
+
+
+public func `simplyCheckSmtp`(`smtpServer`: String, `smtpUsername`: String, `smtpPassword`: String) throws -> Bool {
+    return try FfiConverterBool.lift(
+        try
+    
+    rustCallWithError(FfiConverterTypeSmtpError.self) {
+    
+    rust_lib_dab3_simply_check_smtp(
+        FfiConverterString.lower(`smtpServer`), 
+        FfiConverterString.lower(`smtpUsername`), 
+        FfiConverterString.lower(`smtpPassword`), $0)
 }
     )
 }
@@ -750,7 +801,7 @@ public func `simplySendPlainTextEmail`(`smtpServer`: String, `smtpUsername`: Str
     
     rustCallWithError(FfiConverterTypeSmtpError.self) {
     
-    rust_lib_7fc3_simply_send_plain_text_email(
+    rust_lib_dab3_simply_send_plain_text_email(
         FfiConverterString.lower(`smtpServer`), 
         FfiConverterString.lower(`smtpUsername`), 
         FfiConverterString.lower(`smtpPassword`), 
@@ -768,7 +819,7 @@ public func `simplySendHtmlEmail`(`smtpServer`: String, `smtpUsername`: String, 
     
     rustCallWithError(FfiConverterTypeSmtpError.self) {
     
-    rust_lib_7fc3_simply_send_html_email(
+    rust_lib_dab3_simply_send_html_email(
         FfiConverterString.lower(`smtpServer`), 
         FfiConverterString.lower(`smtpUsername`), 
         FfiConverterString.lower(`smtpPassword`), 

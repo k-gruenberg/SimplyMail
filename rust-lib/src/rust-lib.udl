@@ -1,6 +1,14 @@
 namespace rust_lib {
     [Throws=ImapError]
+    void simply_check_imap([ByRef]string domain, u16 port, [ByRef]string username, [ByRef]string password);
+
+    [Throws=ImapError]
     string? simply_fetch_inbox_top([ByRef]string domain, u16 port, [ByRef]string username, [ByRef]string password);
+
+    
+
+    [Throws=SmtpError]
+    boolean simply_check_smtp([ByRef]string smtp_server, [ByRef]string smtp_username, [ByRef]string smtp_password);
 
     [Throws=SmtpError]
     SmtpResponse simply_send_plain_text_email([ByRef]string smtp_server, [ByRef]string smtp_username, [ByRef]string smtp_password, record<string, string> headers, [ByRef]string body);
